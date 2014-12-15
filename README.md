@@ -23,7 +23,7 @@ $products->website = 'http://www.circle-creative.com/products/o2system'; // stor
 $products->description = ['text','null'] // stored as TEXT(0) NULL field
 O2ORM::store();
 ```
--> Table schema has: id,created_date,created_user,modified_date,modified_user,status,ordering and etc.
+Table schema has: id,created_date,created_user,modified_date,modified_user,status,ordering and etc.
 
 Self Hierarchical (Based on MySQL Hierarchical Data)
 ----
@@ -33,7 +33,7 @@ $nav->structure = 'self-hierarchical';
 $nav->title = 'Home';
 $nav->URL = 'http://www.circle-creative.com/products/o2orm';
 ```
--> Table schema has: id,parent_id,lft,rgt,dpt,ordering and etc as default for nested recursive used or nested with no recursive based on dpt(depth).
+Table schema has: id,parent_id,lft,rgt,dpt,ordering and etc as default for nested recursive used or nested with no recursive based on dpt(depth).
 
 
 Has Relationship
@@ -56,7 +56,7 @@ $books->title = ['Diving into O2ORM','varchar',255,'not null'];
 $books->description = ['Complete O2ORM tutorial from basic to advanced','text',0,'null'];
 O2ORM::store();
 ```
--> Table schema built with constrain foreign key books will has authors_id as FK.
+Table schema built with constrain foreign key books will has authors_id as FK.
 
 Query Active Record Builder
 ----
@@ -91,7 +91,7 @@ $query = $DB->get();
 $query->result(); // Return O2ORM\DB\Results Objects
 $query->result('array') // Return as array
 ```
--> The results object will automaticly unserialize and json_decode() the field which is has serialized array or JSON encode data value.
+The results object will automaticly unserialize and json_decode() the field which is has serialized array or JSON encode data value.
 
 Features
 ----
