@@ -1,10 +1,9 @@
 <?php
 namespace O2ORM;
-
 /**
- * O2System
+ * O2ORM
  *
- * An open source application development framework for PHP 5.2.4 or newer
+ * An open source ORM Database Framework for PHP 5.2.4 or newer
  *
  * This content is released under the MIT License (MIT)
  *
@@ -28,39 +27,32 @@ namespace O2ORM;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * @package     O2System
+ * @package     O2ORM
  * @author      Steeven Andrian Salim
  * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
  * @license     http://circle-creative.com/products/o2system/license.html
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link        http://circle-creative.com
- * @since       Version 2.0
+ * @since       Version 1.0
  * @filesource
  */
-
 // ------------------------------------------------------------------------
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
  * Database Class
  *
- * @package     O2System
- * @subpackage  system/core
+ * @package     O2ORM
+ * @subpackage
  * @category    Core Class
  * @author      Steeven Andrian Salim
- * @link        http://circle-creative.com/products/o2system/user-guide/core/database.html
+ * @link        http://circle-creative.com/products/o2orm/user-guide/core/database.html
  */
-class Database extends \O2System\Core\Library
-{
-    /**
-     * Class configuration
-     *
-     * @access private
-     * @var object
-     */
-    private $_config;
+// ------------------------------------------------------------------------
 
+class Database
+{
     /**
      * Active connection configuration
      *
@@ -70,20 +62,12 @@ class Database extends \O2System\Core\Library
     private $_conn;
 
     /**
-     * PDO connection flag
-     *
-     * @access public
-     * @var bool
-     */
-    public $is_connected = FALSE;
-
-    /**
      * PDO connection stream
      *
      * @access public
      * @var \PDO Object
      */
-    public $pdo = NULL;
+    private $_pdo = NULL;
 
     /**
      * PDO Constant Attributes List
@@ -143,20 +127,12 @@ class Database extends \O2System\Core\Library
     );
 
     /**
-     * PDO Last Run Query Stream
-     *
-     * @access private
-     * @var string
-     */
-    private static $_pdo_query = NULL;
-
-    /**
      * Last Run Query
      *
      * @access private
      * @var string
      */
-    private static $_last_query = NULL;
+    private $_last_query = NULL;
 
     /**
      * Run Queries
@@ -164,7 +140,15 @@ class Database extends \O2System\Core\Library
      * @access private
      * @var string
      */
-    private static $_queries = array();
+    private $_queries = array();
+
+    /**
+     * Active Queries
+     *
+     * @access private
+     * @var string
+     */
+    private $_active_query = array();
 
     /**
      * Class constructor
@@ -172,27 +156,40 @@ class Database extends \O2System\Core\Library
      * @access public
      * @return void
      */
-    public function __construct($connection = 'default')
+    public function __construct(array $config = array(), $buffered = FALSE)
     {
-        // Include O2ORM Database
-        include_once(SYSPATH . 'core/Database/ORM/Metadata' . __EXT__);
-        include_once(SYSPATH . 'core/Database/ORM/ObjectSchema' . __EXT__);
-
-        global $CFG;
-
-        $this->_config = $CFG->item('database');
-
-        if (isset($this->_config->{$connection}))
+        if(! empty($config))
         {
-            $this->_conn = $this->_config->{$connection};
-            $this->__pdo_connect(FALSE);
+            $this->_conn = (object) $config;
+            $this->__pdo_connect($buffered);
+        }
+
+        if($this->is_connected)
+        {
+            $driver_name = $this->_pdo_drivers[$this->_conn->driver];
+            $query_driver = '\O2ORM\Drivers\\' . $driver_name . '\Query';
+            $table_driver = '\O2ORM\Drivers\\' . $driver_name . '\Table';
+
+            // Query Driver
+            $this->query = new $query_driver();
+            $this->table = new $table_driver();
         }
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Server supported drivers
+     *
+     * @access public
+     * @return array
+     */
     public function supported_drivers()
     {
         return \PDO::getAvailableDrivers();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Connect to database using PDO
@@ -236,27 +233,29 @@ class Database extends \O2System\Core\Library
 
         try
         {
-            $this->pdo = new \PDO($this->_conn->dsn, $this->_conn->username, $this->_conn->password, $this->_conn->options);
+            $this->_pdo = new \PDO($this->_conn->dsn, $this->_conn->username, $this->_conn->password, $this->_conn->options);
 
             // Disable Mysql Buffered
-            if($buffered === TRUE) $this->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, TRUE);
+            if($buffered === TRUE) $this->_pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, TRUE);
 
             // We can now log any exceptions on Fatal error.
-            $this->pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $this->_pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 
             // Disable emulation of prepared statements, use REAL prepared statements instead.
-            $this->pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, FALSE);
+            $this->_pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, TRUE);
 
             // Set Connection Flag
             $this->is_connected = TRUE;
         }
         catch (\PDOException $e)
         {
-            $message = 'O2System is unable to connect to database: ' . $e->getMessage();
+            $message = 'O2ORM is unable to connect to database: ' . $e->getMessage();
             log_message('error', $message);
             show_error($message);
         }
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Connect to database using PDO
@@ -270,25 +269,72 @@ class Database extends \O2System\Core\Library
         $this->__pdo_connect($buffered);
     }
 
+    /**
+     * Database connection id
+     *
+     * @access public
+     * @return SQL Conection ID
+     */
     public function conn_id()
     {
-
+        $conn_id = $this->_pdo->query('SELECT CONNECTION_ID()')->fetch(\PDO::FETCH_ASSOC);
+        @$this->_conn->id = $conn_id['CONNECTION_ID()'];
+        return $this->_conn->id;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Execute query using PDO
+     *
+     * @access public
+     * @return void
+     */
+    public function execute($sql)
+    {
+        // Execute query
+        $this->_pdo->exec($sql);
+
+        // Set last query
+        $this->_last_query = $sql;
+
+        // Collects queries
+        $this->_queries[] = $sql;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Execute query using PDO
+     *
+     * @access public
+     * @return void
+     */
+    public function query($sql)
+    {
+        // Set last query
+        $this->_last_query = $sql;
+
+        // Collects queries
+        $this->_queries[] = $sql;
+
+        // Execute query
+        return $this->_pdo->query($sql);
+    }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get all rows query result
      *
      * @access public
-     * @return object|array  \O2ORM\Database\ObjectSchema
+     * @return object|array  \O2ORM\Schema\Results
      */
     public function result($return = 'object')
     {
-        $sql = $this->query->get_string();
-        self::$_last_query = $sql;
-        self::$_queries[] = $sql;
+        $sql = $this->query->sql();
 
-        $query = $this->pdo->prepare($sql);
+        $query = $this->_pdo->prepare($sql);
 
         // Binds a parameter to the specified variable name
         $bindParams = $this->query->get_params();
@@ -317,56 +363,54 @@ class Database extends \O2System\Core\Library
 
         $query->execute();
 
-        if ($return === 'object') {
-            \O2ORM\Database\ObjectSchema::as_object();
-        } elseif ($return === 'array') {
-            \O2ORM\Database\ObjectSchema::as_array();
+        $this->_last_query = $sql;
+        $this->_queries[] = $sql;
+
+        if ($return === 'object')
+        {
+            \O2ORM\Schema\Results::as_object();
+        }
+        elseif ($return === 'array')
+        {
+            \O2ORM\Schema\Results::as_array();
         }
 
-        $query->setFetchMode(\PDO::FETCH_CLASS, 'O2ORM\Database\ObjectSchema');
-        self::$_pdo_query = $query;
+        $query->setFetchMode(\PDO::FETCH_CLASS, 'O2ORM\Schema\Results');
+        $this->_active_query = $query;
 
         return $query->fetchAll();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get all rows query result and free the result
      *
      * @access public
-     * @return object|array  \O2ORM\Database\ObjectSchema
+     * @return object|array  \O2ORM\Schema\Results
      */
     public function free_result($return = 'object')
     {
         $results = $this->result($return);
-        self::$_pdo_query = NULL;
-        $this->pdo->closeCursor();
+        $this->_active_query = NULL;
+        $this->_pdo->closeCursor();
 
         return $results;
     }
 
-    public function result_id()
-    {
-
-    }
-
-    public function export_result()
-    {
-
-    }
+    // ------------------------------------------------------------------------
 
     /**
      * Get first row of query result
      *
      * @access public
-     * @return object|array  \O2ORM\Database\ObjectSchema
+     * @return object|array  \O2ORM\Schema\Results
      */
     public function row($return = 'object')
     {
-        $sql = $this->query->get_string();
-        self::$_last_query = $sql;
-        self::$_queries = $sql;
+        $sql = $this->query->sql();
 
-        $query = $this->pdo->prepare($sql);
+        $query = $this->_pdo->prepare($sql);
 
         // Binds a parameter to the specified variable name
         $bindParams = $this->query->get_params();
@@ -395,18 +439,26 @@ class Database extends \O2System\Core\Library
 
         $query->execute();
 
-        if ($return === 'object') {
-            \O2ORM\Database\ObjectSchema::as_object();
-        } elseif ($return === 'array') {
-            \O2ORM\Database\ObjectSchema::as_array();
+        $this->_last_query = $sql;
+        $this->_queries[] = $sql;
+
+        if ($return === 'object')
+        {
+            \O2ORM\Schema\Results::as_object();
+        }
+        elseif ($return === 'array')
+        {
+            \O2ORM\Schema\Results::as_array();
         }
 
-        $query->setFetchMode(\PDO::FETCH_CLASS, 'O2ORM\Database\ObjectSchema');
+        $query->setFetchMode(\PDO::FETCH_CLASS, 'O2ORM\Schema\Results');
 
-        self::$_pdo_query = $query;
+        $this->_active_query = $query;
 
         return $query->fetch();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get next set of query result row
@@ -416,13 +468,15 @@ class Database extends \O2System\Core\Library
      */
     public function next_row()
     {
-        if(! empty(self::$_pdo_query))
+        if(! empty($this->_active_query))
         {
-            return self::$_pdo_query->nextRowset();
+            return $this->_active_query->nextRowset();
         }
 
         return FALSE;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get amount rows of query result
@@ -432,8 +486,10 @@ class Database extends \O2System\Core\Library
      */
     public function num_rows()
     {
-        return self::$_pdo_query->rowCount();
+        return $this->_active_query->rowCount();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Rowsets
@@ -446,9 +502,11 @@ class Database extends \O2System\Core\Library
         $sql = 'CALL multiple_rowsets()';
         if($this->is_connected)
         {
-            return $this->pdo->query($sql);
+            return $this->_pdo->query($sql);
         }
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Number of affected rows
@@ -458,8 +516,10 @@ class Database extends \O2System\Core\Library
      */
     public function affected_rows()
     {
-        return self::$_pdo_query->rowCount();
+        return $this->_active_query->rowCount();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get last insert id
@@ -469,8 +529,10 @@ class Database extends \O2System\Core\Library
      */
     public function last_insert_id()
     {
-        return $this->pdo->lastInsertId();
+        return $this->_pdo->lastInsertId();
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get last query
@@ -480,8 +542,10 @@ class Database extends \O2System\Core\Library
      */
     public function last_query()
     {
-        return self::$_last_query;
+        return $this->_last_query;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get all run queries
@@ -491,13 +555,23 @@ class Database extends \O2System\Core\Library
      */
     public function queries()
     {
-        return self::$_queries;
+        return $this->_queries;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Call database function
+     *
+     * @access public
+     * @return string
+     */
     public function call_function()
     {
 
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Prepare string
@@ -521,18 +595,20 @@ class Database extends \O2System\Core\Library
         return $string;
     }
 
+    // ------------------------------------------------------------------------
+
     public function conn_metadata()
     {
-        $conn = new \O2ORM\Database\Metadata();
+        $conn = new \O2ORM\Schema\Metadata\Objects();
         $conn->driver = $this->_pdo_drivers[$this->_conn->driver];
         $conn->port = $this->_conn->port;
         $conn->database = $this->_conn->database;
         $conn->dsn = $this->_conn->dsn;
-        $conn->status = $this->pdo->getAttribute(7);
-        $conn->persistent = $this->pdo->getAttribute(12);
-        @$conn->server->version = $this->pdo->getAttribute(4);
+        $conn->status = $this->_pdo->getAttribute(7);
+        $conn->persistent = $this->_pdo->getAttribute(12);
+        @$conn->server->version = $this->_pdo->getAttribute(4);
 
-        $server_info = explode('  ',$this->pdo->getAttribute(6));
+        $server_info = explode('  ',$this->_pdo->getAttribute(6));
         foreach($server_info as $info)
         {
             $x_info = explode(' ', $info);
@@ -547,13 +623,15 @@ class Database extends \O2System\Core\Library
             @$conn->server->{$info_name} = $info_data;
         }
 
-        $conn->client_version = $this->pdo->getAttribute(5);
-        @$conn->pdo->auto_commit = $this->pdo->getAttribute(0);
-        @$conn->pdo->error_mode = $this->pdo->getAttribute(3);
-        @$conn->pdo->buffered = $this->pdo->getAttribute(12);
+        $conn->client_version = $this->_pdo->getAttribute(5);
+        @$conn->pdo->auto_commit = $this->_pdo->getAttribute(0);
+        @$conn->pdo->error_mode = $this->_pdo->getAttribute(3);
+        @$conn->pdo->buffered = $this->_pdo->getAttribute(12);
 
         return $conn;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Close database connection
@@ -563,10 +641,11 @@ class Database extends \O2System\Core\Library
      */
     public function close()
     {
-        self::$_pdo_query = NULL;
-        $this->pdo = NULL;
+        $this->_pdo = NULL;
         $this->is_connected = FALSE;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Database platform
@@ -576,12 +655,14 @@ class Database extends \O2System\Core\Library
      */
     public function platform()
     {
-        $platform = new \O2ORM\Database\Metadata();
+        $platform = new \O2ORM\Schema\Metadata\Objects();
         $platform->name = $this->_pdo_drivers[$this->_conn->driver];
-        $platform->version = $this->pdo->getAttribute(4);
+        $platform->version = $this->_pdo->getAttribute(4);
 
         return $platform;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Database platform version
@@ -591,19 +672,140 @@ class Database extends \O2System\Core\Library
      */
     public function version()
     {
-        return $this->pdo->getAttribute(4);
+        return $this->_pdo->getAttribute(4);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Insert data
+     *
+     * @access public
+     * @return void
+     */
+    public function insert($table, $data)
+    {
+        $this->query->insert($table, $data);
+
+        // Get SQL
+        $sql = $this->query->sql();
+
+        $query = $this->_pdo->prepare($sql);
+
+        // Binds a parameter to the specified variable name
+        $bindParams = $this->query->get_params();
+
+        foreach($bindParams as $param)
+        {
+            if(is_numeric($param->value))
+            {
+                $query->bindValue($param->name, $param->value, \PDO::PARAM_INT);
+            }
+            elseif(is_string($param->value))
+            {
+                try
+                {
+                    $query->bindValue($param->name, utf8_encode($param->value), \PDO::PARAM_STR);
+                }
+                catch(\PDOException $e)
+                {
+
+                }
+            }
+            elseif(is_bool($param->value))
+            {
+                $query->bindValue($param->name, $param->value, \PDO::PARAM_BOOL);
+            }
+            elseif(is_null($param->value))
+            {
+                $query->bindValue($param->name, $param->value, \PDO::PARAM_NULL);
+            }
+
+        }
+
+        $query->execute();
+
+        // Set last query
+        $this->_last_query = $sql;
+
+        // Collects queries
+        $this->_queries[] = $sql;
+
+        return $this->last_insert_id();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Update data
+     *
+     * @access public
+     * @return void
+     */
+    public function update($table, $data, $conditions)
+    {
+        $this->query->update($table, $data, $conditions);
+
+        // Get SQL
+        $sql = $this->query->sql();
+        $this->execute($sql);
+
+        return $this->last_insert_id();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Delete data
+     *
+     * @access public
+     * @return void
+     */
+    public function delete($table, $conditions)
+    {
+        $this->query->delete($table, $conditions);
+
+        // Get SQL
+        $sql = $this->query->sql();
+        $this->execute($sql);
+
+        return $this->last_insert_id();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Create database
+     *
+     * @access public
+     * @return void
+     */
     public function create()
     {
 
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Drop database
+     *
+     * @access public
+     * @return void
+     */
     public function drop()
     {
 
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Optimize database
+     *
+     * @access public
+     * @return void
+     */
     public function optimize()
     {
 
@@ -611,4 +813,4 @@ class Database extends \O2System\Core\Library
 }
 
 /* End of file Database.php */
-/* Location: ./system/core/Database/Database.php */
+/* Location: ./O2ORM/Database.php */

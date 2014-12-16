@@ -1,5 +1,5 @@
 <?php
-namespace O2ORM\Drivers\MySQL;
+namespace O2ORM\Adapters;
 /**
  * O2ORM
  *
@@ -41,30 +41,82 @@ namespace O2ORM\Drivers\MySQL;
 defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * MySQL Table Driver Class
+ * Database Cache Adapters Class
  *
- * @package     O2ORM
- * @subpackage  Drivers
- * @category    Drivers Class
- * @author      Steeven Andrian Salim
- * @link        http://steevenz.com
- * @link        http://circle-creative.com/products/o2orm/user-guide/drivers/table.html
+ * @package       O2ORM
+ * @subpackage    Adapters
+ * @category      Adapters Class
+ * @author        Steeven Andrian Salim
+ * @link          http://steevenz.com
+ * @link          http://circle-creative.com/products/o2orm/user-guide/adapters/cache.html
  */
 // ------------------------------------------------------------------------
 
-class Table extends \O2ORM\Adapters\Table
+class Cache
 {
     /**
-     * Class constructor
+     * Start cache
      *
-     * @access public
-     * @return void
+     * @access  public
+     * @return	bool
      */
-    public function __construct()
+    public function start()
+    {
+
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Stop cache
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function stop()
+    {
+
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Flush cache
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function flush()
+    {
+
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set on cache
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function create()
+    {
+
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set off cache
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function delete()
     {
 
     }
 }
 
-/* End of file Table.php */
-/* Location: ./O2ORM/Drivers/MySQL/Table.php */
+/* End of file Cache.php */
+/* Location: ./O2ORM/Adapters/Cache.php */

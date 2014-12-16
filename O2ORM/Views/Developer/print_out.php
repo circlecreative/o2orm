@@ -65,7 +65,7 @@
     </div>
 <?php endif; ?>
 
-<div class="copyright">Copyright &copy 2009 - <?php echo date('Y'); ?> PT. Lingkar Kreasi (Circle Creative) :: O2System
+<div class="copyright">Copyright &copy 2009 - <?php echo date('Y'); ?> PT. Lingkar Kreasi (Circle Creative) :: O2ORM
     Framework
 </div>
 </body>

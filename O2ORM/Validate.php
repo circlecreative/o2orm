@@ -1,9 +1,9 @@
 <?php
-namespace O2ORM\Database;
+namespace O2ORM;
 /**
  * O2ORM
  *
- * An open source Database Framework for PHP 5.2.4 or newer
+ * An open source ORM Database Framework for PHP 5.2.4 or newer
  *
  * This content is released under the MIT License (MIT)
  *
@@ -33,66 +33,29 @@ namespace O2ORM\Database;
  * @license     http://circle-creative.com/products/o2system/license.html
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link        http://circle-creative.com
- * @since       Version 2.0
+ * @since       Version 1.0
  * @filesource
  */
-
 // ------------------------------------------------------------------------
 
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * O2ORM Object Schema
+ * ORM Validate Class
  *
- * @package     O2System
- * @subpackage  system/core
- * @category    Core Class
- * @author      Steeven Andrian Salim
- * @link        http://circle-creative.com/products/o2orm/user-guide/object-schema.html
+ * Validate type of value
+ *
+ * @package		O2ORM
+ * @subpackage
+ * @category	Core Class
+ * @author		Steeven Andrian Salim
+ * @link        http://steevenz.com
+ * @link		http://circle-creative.com/products/o2orm/user-guide/core/validate.html
  */
+// ------------------------------------------------------------------------
 
-class ObjectSchema
+class Validate
 {
-    private static $return = 'object';
-
-    static function as_array()
-    {
-        self::$return = 'array';
-    }
-
-    static function as_object()
-    {
-        self::$return = 'object';
-    }
-
-    function __set($name, $value)
-    {
-        if($this->_is_serialized($value))
-        {
-            $value = unserialize($value);
-        }
-        elseif($this->_is_json($value))
-        {
-            $value = json_decode($value, TRUE);
-        }
-
-        if(self::$return === 'object')
-        {
-            if(is_array($value))
-            {
-                $this->{$name} = (object) $value;
-            }
-            else
-            {
-                $this->{$name} = $value;
-            }
-        }
-        else
-        {
-            $this->{$name} = $value;
-        }
-    }
-
     /**
      * Tests if an input is valid PHP serialized string.
      *
@@ -107,7 +70,7 @@ class ObjectSchema
      * @param		mixed	$result	Result of unserialize() of the $value
      * @return		boolean			True if $value is serialized data, otherwise false
      */
-    private function _is_serialized($value, &$result = null)
+    public static function is_serialized($value, &$result = null)
     {
         // Bit of a give away this one
         if (!is_string($value))
@@ -188,6 +151,8 @@ class ObjectSchema
         return true;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Checks if string is valid json.
      *
@@ -196,7 +161,7 @@ class ObjectSchema
      * @param $string
      * @return bool
      */
-    function _is_json($string)
+    public static function is_json($string)
     {
         // make sure provided input is of type string
         if (!is_string($string))
@@ -240,4 +205,9 @@ class ObjectSchema
 
         return $is_valid;
     }
+
+    // ------------------------------------------------------------------------
 }
+
+/* End of file Validate.php */
+/* Location: ./O2ORM/Validate.php */

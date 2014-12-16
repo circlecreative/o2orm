@@ -1,5 +1,5 @@
 <?php
-namespace O2ORM\Drivers\MySQL;
+namespace O2ORM\Schema\Metadata;
 /**
  * O2ORM
  *
@@ -41,30 +41,47 @@ namespace O2ORM\Drivers\MySQL;
 defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * MySQL Table Driver Class
+ * Objects Metadata Schema Class
  *
  * @package     O2ORM
- * @subpackage  Drivers
- * @category    Drivers Class
+ * @subpackage  Schema/Metadata
+ * @category    Metadata Class
  * @author      Steeven Andrian Salim
  * @link        http://steevenz.com
- * @link        http://circle-creative.com/products/o2orm/user-guide/drivers/table.html
+ * @link        http://circle-creative.com/products/o2orm/user-guide/schema/metadata/objects.html
  */
 // ------------------------------------------------------------------------
 
-class Table extends \O2ORM\Adapters\Table
+class Objects
 {
-    /**
-     * Class constructor
-     *
-     * @access public
-     * @return void
-     */
-    public function __construct()
+    public function __set($name, $value)
     {
+        if(\O2ORM\Validate::is_serialized($value))
+        {
+            $value = unserialize($value);
+        }
+        elseif(\O2ORM\Validate::is_json($value))
+        {
+            $value = json_decode($value, TRUE);
+        }
 
+        if(self::$return === 'object')
+        {
+            if(is_array($value))
+            {
+                $this->{$name} = (object) $value;
+            }
+            else
+            {
+                $this->{$name} = $value;
+            }
+        }
+        else
+        {
+            $this->{$name} = $value;
+        }
     }
 }
 
-/* End of file Table.php */
-/* Location: ./O2ORM/Drivers/MySQL/Table.php */
+/* End of file Objects.php */
+/* Location: ./O2ORM/Metadata/Objects.php */

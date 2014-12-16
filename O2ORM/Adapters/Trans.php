@@ -1,5 +1,5 @@
 <?php
-namespace O2ORM\Drivers\MySQL;
+namespace O2ORM\Adapters;
 /**
  * O2ORM
  *
@@ -41,30 +41,85 @@ namespace O2ORM\Drivers\MySQL;
 defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * MySQL Table Driver Class
+ * Database Transactions Adapters Class
  *
  * @package     O2ORM
- * @subpackage  Drivers
- * @category    Drivers Class
+ * @subpackage  Adapters
+ * @category    Adapters Class
  * @author      Steeven Andrian Salim
  * @link        http://steevenz.com
- * @link        http://circle-creative.com/products/o2orm/user-guide/drivers/table.html
+ * @link        http://circle-creative.com/products/o2orm/user-guide/adapters/table.html
  */
 // ------------------------------------------------------------------------
 
-class Table extends \O2ORM\Adapters\Table
+abstract class Trans
 {
     /**
-     * Class constructor
+     * Transaction flag
      *
-     * @access public
-     * @return void
+     * @access protected
+     * @var	bool
      */
-    public function __construct()
-    {
+    protected $_active = FALSE;
 
+    /**
+     * Initiates a transaction
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function begin()
+    {
+        if ($this->_active === FALSE)
+        {
+            $this->_active = $this->pdo->beginTransaction();
+            return $this->_active;
+        }
+        return FALSE;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Transaction status
+     * Checks if inside a transaction
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function status()
+    {
+        return $this->_active = $this->pdo->inTransaction();
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Rolls back a transaction
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function rollback()
+    {
+        $this->pdo->rollback();
+        $this->hasActiveTransaction = FALSE;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Commit a transaction
+     *
+     * @access  public
+     * @return	bool
+     */
+    public function commit()
+    {
+        $this->pdo->commit();
+        $this->_active = FALSE;
     }
 }
 
-/* End of file Table.php */
-/* Location: ./O2ORM/Drivers/MySQL/Table.php */
+/* End of file Trans.php */
+/* Location: ./O2ORM/Adapters/Trans.php */

@@ -1,19 +1,71 @@
 <?php
+namespace O2ORM\Drivers\MySQL;
 /**
- * Created by PhpStorm.
- * User: Steeven Andrian
- * Date: 15/12/2014
- * Time: 6:32
+ * O2ORM
+ *
+ * An open source ORM Database Framework for PHP 5.2.4 or newer
+ *
+ * This content is released under the MIT License (MIT)
+ *
+ * Copyright (c) 2014, PT. Lingkar Kreasi (Circle Creative).
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @package     O2ORM
+ * @author      Steeven Andrian Salim
+ * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
+ * @license     http://circle-creative.com/products/o2system/license.html
+ * @license     http://opensource.org/licenses/MIT  MIT License
+ * @link        http://circle-creative.com
+ * @since       Version 1.0
+ * @filesource
  */
 
-namespace O2ORM\Drivers\MySQL;
+// ------------------------------------------------------------------------
 
+defined('ORMPATH') OR exit('No direct script access allowed');
 
-class Query extends \O2ORM\Adapters\Query {
+/**
+ * MySQL Query Driver Class
+ *
+ * @package     O2ORM
+ * @subpackage  Drivers
+ * @category    Drivers Class
+ * @author      Steeven Andrian Salim
+ * @link        http://steevenz.com
+ * @link        http://circle-creative.com/products/o2orm/user-guide/drivers/table.html
+ */
+// ------------------------------------------------------------------------
 
+class Query extends \O2ORM\Adapters\Query
+{
+    /**
+     * Class constructor
+     *
+     * @access public
+     * @return void
+     */
     public function __construct()
     {
 
     }
-
 }
+
+/* End of file Query.php */
+/* Location: ./O2ORM/Drivers/MySQL/Query.php */

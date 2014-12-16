@@ -26,37 +26,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * @package     O2System
+ * @package     O2ORM
  * @author      Steeven Andrian Salim
  * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
  * @license     http://circle-creative.com/products/o2system/license.html
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link        http://circle-creative.com
- * @since       Version 2.0
+ * @since       Version 1.0
  * @filesource
  */
-
 // ------------------------------------------------------------------------
 
-defined('O2ORM_PATH') OR exit('No direct script access allowed');
+defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
  * System Developer
  *
  * Add developer functions and class.
  *
- * @package		O2System
- * @subpackage	system/core
- * @category	Developer
+ * @package		O2ORM
+ * @subpackage
+ * @category	Developer Helper
  * @author		Steeven Andrian Salim
  * @link		http://circle-creative.com/products/o2orm/user-guide/core/developer.html
  */
-
 // ------------------------------------------------------------------------
+
+/**
+ * Developer print out
+ *
+ * Print out string, integer, boolean, array and object
+ * perlines with line number and tracing backtrace
+ *
+ * @access public
+ */
 if (!function_exists('print_out'))
 {
     function print_out($data = '', $trace = TRUE, $die = TRUE)
     {
+        if(is_bool($data))
+        {
+            $data = $data === TRUE ? 'TRUE' : 'FALSE';
+        }
+
+        if(empty($data))
+        {
+            $data = 'Output is empty';
+        }
+
         $data = print_r($data,TRUE);
         $data = htmlentities($data);
         $data = htmlspecialchars( htmlspecialchars_decode($data, ENT_QUOTES), ENT_QUOTES, 'UTF-8' );
@@ -68,7 +85,7 @@ if (!function_exists('print_out'))
         ob_start();
 
         // Load print out template
-        include O2ORM_PATH . 'O2ORM/Views/developer/print_out' . __EXT__;
+        include ORMPATH . 'O2ORM/Views/developer/print_out' . __EXT__;
         $buffer = ob_get_contents();
         ob_end_clean();
 
@@ -79,6 +96,16 @@ if (!function_exists('print_out'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+/**
+ * Developer print line
+ *
+ * Print out string, integer, boolean, array and object
+ * perlines with line number and tracing backtrace
+ *
+ * @access public
+ */
 if(! function_exists('print_line'))
 {
     function print_line($line = '', $end_line = FALSE, $trace = TRUE, $die = TRUE)
@@ -112,6 +139,16 @@ if(! function_exists('print_line'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+/**
+ * Developer marker for working with print line
+ *
+ * Print out string, integer, boolean, array and object
+ * perlines with line number and tracing backtrace
+ *
+ * @access public
+ */
 if (! function_exists('print_line_marker'))
 {
     function print_line_marker($comment, $mark = 'START', $repeat = 5, $splitter = '-')
@@ -133,6 +170,15 @@ if (! function_exists('print_line_marker'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+/**
+ * Developer print trace
+ *
+ * Debug Backtrace Printer
+ *
+ * @access public
+ */
 if (! function_exists('print_trace'))
 {
     function print_trace()
@@ -187,19 +233,20 @@ if (! function_exists('print_trace'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+
+/**
+ * Standard var_dump with pre tag
+ *
+ * @access public
+ */
 if (! function_exists('print_dump'))
 {
     function print_dump($data, $die = TRUE)
     {
         echo '<pre>';
-        // This is for correct handling of newlines
-        //ob_start();
         var_dump($data);
-        //$output = ob_get_contents();
-        //ob_end_clean();
-
-        // Escape every HTML special chars (especially > and < )
-        //echo htmlspecialchars($output, ENT_QUOTES);
         echo '</pre>';
 
         // Die
@@ -207,6 +254,13 @@ if (! function_exists('print_dump'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+/**
+ * Assets URL for Developer views file
+ *
+ * @access public
+ */
 if (!function_exists('assets_url'))
 {
     function assets_url()
@@ -226,6 +280,13 @@ if (!function_exists('assets_url'))
     }
 }
 
+// ------------------------------------------------------------------------
+
+/**
+ * Print output to browser console with javascript
+ *
+ * @access public
+ */
 if (! function_exists('print_console'))
 {
     function print_console($data)
@@ -241,8 +302,15 @@ if (! function_exists('print_console'))
     }
 }
 
+// ------------------------------------------------------------------------
 
-if (! function_exists('print_console'))
+/**
+ * Standard print code with pre tag
+ * Print string, integer, boolean, array, object, html and etc.
+ *
+ * @access public
+ */
+if (! function_exists('print_code'))
 {
     function print_code($data, $die = TRUE)
     {
@@ -259,6 +327,6 @@ if (! function_exists('print_console'))
         if($die) die();
     }
 }
-// ------------------------------------------------------------------------
+
 /* End of file Developer.php */
-/* Location: .O2ORM/ORM/Developer.php */
+/* Location: .O2ORM/Developer.php */

@@ -32,7 +32,7 @@
  * @license		http://circle-creative.com/products/o2system/license.html
  * @license	    http://opensource.org/licenses/MIT	MIT License
  * @link		http://circle-creative.com
- * @since		Version 2.0
+ * @since		Version 1.0
  * @filesource
  */
 
@@ -97,20 +97,37 @@
 | the query builder class.
 */
 
-$config = array(
+$config['default'] = array(
     'driver'     => 'mysql',
     'host'       => 'localhost',
     'port'       => '3306',
     'database'   => 'o2orm',
     'username'   => 'root',
     'password'   => '',
+<<<<<<< HEAD
+    'charset'    => 'utf8',
+=======
     'charset'    => 'UTF8',
+>>>>>>> origin/master
     'collation'  => 'utf8_unicode_ci',
     'prefix'     => '',
     'persistent' => TRUE,
+    'stored_schema' => FALSE,
 );
 
-$config = json_decode(json_encode($config));
+$config['testing'] = array(
+    'driver'     => 'mysql',
+    'host'       => 'localhost',
+    'port'       => '3306',
+    'database'   => 'testing',
+    'username'   => 'root',
+    'password'   => '',
+    'charset'    => 'utf8',
+    'collation'  => 'utf8_unicode_ci',
+    'prefix'     => '',
+    'persistent' => TRUE,
+    'stored_schema' => TRUE,
+);
 
 /* End of file config.php */
 /* Location: ./O2ORM/config.php */

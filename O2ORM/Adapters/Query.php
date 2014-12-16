@@ -1,55 +1,55 @@
 <?php
 namespace O2ORM\Adapters;
-    /**
-     * O2System
-     *
-     * An open source application development framework for PHP 5.2.4 or newer
-     *
-     * This content is released under the MIT License (MIT)
-     *
-     * Copyright (c) 2014, PT. Lingkar Kreasi (Circle Creative).
-     *
-     * Permission is hereby granted, free of charge, to any person obtaining a copy
-     * of this software and associated documentation files (the "Software"), to deal
-     * in the Software without restriction, including without limitation the rights
-     * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-     * copies of the Software, and to permit persons to whom the Software is
-     * furnished to do so, subject to the following conditions:
-     *
-     * The above copyright notice and this permission notice shall be included in
-     * all copies or substantial portions of the Software.
-     *
-     * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-     * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-     * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-     * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-     * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-     * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-     * THE SOFTWARE.
-     *
-     * @package     O2System
-     * @author      Steeven Andrian Salim
-     * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
-     * @license     http://circle-creative.com/products/o2system/license.html
-     * @license     http://opensource.org/licenses/MIT  MIT License
-     * @link        http://circle-creative.com
-     * @since       Version 2.0
-     * @filesource
-     */
-
+/**
+ * O2ORM
+ *
+ * An open source ORM Database Framework for PHP 5.2.4 or newer
+ *
+ * This content is released under the MIT License (MIT)
+ *
+ * Copyright (c) 2014, PT. Lingkar Kreasi (Circle Creative).
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * @package     O2ORM
+ * @author      Steeven Andrian Salim
+ * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
+ * @license     http://circle-creative.com/products/o2system/license.html
+ * @license     http://opensource.org/licenses/MIT  MIT License
+ * @link        http://circle-creative.com
+ * @since       Version 1.0
+ * @filesource
+ */
 // ------------------------------------------------------------------------
 
-defined('O2ORM_PATH') OR exit('No direct script access allowed');
+defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * Query Builder Class
+ * Database Query Adapters Class
  *
- * @package     O2System
- * @subpackage  system/core
- * @category    Core Class
+ * @package     O2ORM
+ * @subpackage  Adapters
+ * @category    Adapters Class
  * @author      Steeven Andrian Salim
- * @link        http://circle-creative.com/products/o2system/user-guide/core/database/query.html
+ * @link        http://circle-creative.com/products/o2orm/user-guide/adapters/query.html
  */
+// ------------------------------------------------------------------------
 
 abstract class Query
 {
@@ -115,16 +115,22 @@ abstract class Query
         'io' => \PDO::PARAM_INPUT_OUTPUT
     );
 
+    // ------------------------------------------------------------------------
+
     public function run($query)
     {
         $this->_query = $query;
     }
 
-    public function get_string()
+    // ------------------------------------------------------------------------
+
+    public function sql()
     {
         if(empty($this->_query)) $this->prepare();
         return $this->_query;
     }
+
+    // ------------------------------------------------------------------------
 
     public function prepare()
     {
@@ -174,11 +180,15 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     public function get_params()
     {
         if(empty($this->_query)) $this->prepare();
         return $this->_params;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get
@@ -203,13 +213,15 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * From
      *
      * Generates the FROM portion of the query
      *
      * @param    mixed    can be a string or array
-     * @return    O2System Database::Query
+     * @return    O2ORM Database::Query
      */
     public function from($table, $reset = FALSE)
     {
@@ -227,6 +239,8 @@ abstract class Query
 
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     private function _prepare_field($string)
     {
@@ -249,6 +263,8 @@ abstract class Query
 
         return $string;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Get Where
@@ -275,6 +291,8 @@ abstract class Query
 
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Where
@@ -367,16 +385,14 @@ abstract class Query
         return $this;
     }
 
-    public function escape($escape = TRUE)
-    {
-        $this->_escape = $escape;
-        return $this;
-    }
+    // ------------------------------------------------------------------------
 
     public function union($query)
     {
         $this->_union = $query;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Select
@@ -384,7 +400,7 @@ abstract class Query
      * Generates the SELECT portion of the query
      *
      * @param    string
-     * @return	O2System Database::Query
+     * @return	O2ORM Database::Query
      */
     public function select($select)
     {
@@ -405,6 +421,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Select Max
      *
@@ -412,7 +430,7 @@ abstract class Query
      *
      * @param	string	the field
      * @param	string	an alias
-     * @return	O2System Database::Query
+     * @return	O2ORM Database::Query
      */
     public function select_max($field, $alias = NULL)
     {
@@ -422,6 +440,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Select Min
      *
@@ -429,7 +449,7 @@ abstract class Query
      *
      * @param	string	the field
      * @param	string	an alias
-     * @return	O2System Database::Query
+     * @return	O2ORM Database::Query
      */
     public function select_min($field, $alias = NULL)
     {
@@ -439,6 +459,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Select Average
      *
@@ -446,7 +468,7 @@ abstract class Query
      *
      * @param	string	the field
      * @param	string	an alias
-     * @return	O2System Database::Query
+     * @return	O2ORM Database::Query
      */
     public function select_avg($field, $alias = NULL)
     {
@@ -456,6 +478,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Select Sum
      *
@@ -463,7 +487,7 @@ abstract class Query
      *
      * @param    string    the field
      * @param    string    an alias
-     * @return	O2System Database::Query
+     * @return	O2ORM Database::Query
      */
     public function select_sum($field, $alias = NULL)
     {
@@ -473,19 +497,23 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * DISTINCT
      *
      * Sets a flag which tells the query string compiler to add DISTINCT
      *
      * @param    bool
-     * @return    O2System Database::Query
+     * @return    O2ORM Database::Query
      */
     public function distinct($distinct = TRUE)
     {
         $this->_distinct = $distinct;
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Join
@@ -522,16 +550,20 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * GROUP BY
      *
      * @param    string $by
-     * @return    O2System Database::Query
+     * @return    O2ORM Database::Query
      */
     public function group_by($by)
     {
         $this->_group_by[] = $this->_prepare_field($by);
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * OR Where
@@ -549,6 +581,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Where_in
      *
@@ -564,6 +598,8 @@ abstract class Query
         $this->_where[] = $this->_prepare_field($field).' IN ('.\O2ORM\Stringer::flatten($values).')';
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Where_in_or
@@ -581,6 +617,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Where_not_in
      *
@@ -596,6 +634,8 @@ abstract class Query
         $this->_where[] = $this->_prepare_field($field).' NOT IN ('.\O2ORM\Stringer::flatten($values).')';
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Where_not_in_or
@@ -613,11 +653,15 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     public function where_between($field, array $values = array())
     {
         $this->_where[] = $this->_prepare_field($field).' BETWEEN '.implode(' AND ', $values);
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     public function or_where_between($field, array $values = array())
     {
@@ -625,17 +669,23 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     public function where_not_between($field, array $values = array())
     {
         $this->_where[] = $this->_prepare_field($field).' NOT BETWEEN '.implode(' AND ', $values);
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     public function or_where_not_between($field, array $values = array())
     {
         $this->_or_where[] = $this->_prepare_field($field).' NOT BETWEEN '.implode(' AND ', $values);
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * OR Like
@@ -652,6 +702,8 @@ abstract class Query
         $this->like($field, $match, $side, 'OR-LIKE');
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Like
@@ -697,6 +749,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Not Like
      *
@@ -712,6 +766,8 @@ abstract class Query
         $this->like($field, $match, $side, 'NOT-LIKE');
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * OR Not Like
@@ -729,6 +785,8 @@ abstract class Query
         return $this;
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * Sets the OR HAVING value
      *
@@ -743,6 +801,8 @@ abstract class Query
         $this->having($field, $value, 'OR-HAVING');
         return $this;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Sets the HAVING value
@@ -832,8 +892,19 @@ abstract class Query
         return $this;
     }
 
-    public function insert($table, $data, $return = FALSE)
+    // ------------------------------------------------------------------------
+
+    /**
+     * Insert data
+     *
+     * @param	string
+     * @param	array
+     * @return	object
+     */
+    public function insert($table, $data)
     {
+        $this->_params = array();
+
         foreach($data as $field => $value)
         {
             $fields[] = $field;
@@ -844,37 +915,65 @@ abstract class Query
             $params->field = substr($parameter, 1);
             $params->value = $value;
 
-            if($return === TRUE)
-            {
-                $_params[] = $params;
-            }
-            else
-            {
-                $this->_params[] = $params;
-            }
+            $this->_params[] = $params;
         }
 
-        $sql = 'INSERT INTO `'.$table.'` ('.\O2ORM\Stringer::flatten($fields).') VALUES ('.\O2ORM\Stringer::flatten($values).')';
-        if($return === TRUE)
-        {
-            return array('sql' => $sql, 'params' => $_params);
-        }
-        else
-        {
-            $this->_query = $sql;
-        }
+        $sql = 'INSERT INTO '.\O2ORM\Stringer::escape($table).'('.\O2ORM\Stringer::flatten($fields, FALSE).') VALUES('.\O2ORM\Stringer::flatten($values, FALSE).');';
+        $this->_query = $sql;
     }
 
-    public function update()
+    /**
+     * Update data
+     *
+     * @param	string
+     * @param	array
+     * @return	object
+     */
+    public function update($table, $data, $conditions)
     {
+        $sql = 'UPDATE '.\O2ORM\Stringer::escape($table).' SET ';
 
+        foreach($data as $field => $value)
+        {
+            $sets[] = \O2ORM\Stringer::escape($field).'='.\O2ORM\Stringer::quote($value);
+        }
+
+        $sql.= implode(', ',$sets).' WHERE ';
+
+        foreach($conditions as $field => $value)
+        {
+            $rules[]= \O2ORM\Stringer::escape($field).'='.\O2ORM\Stringer::quote($value);
+        }
+
+        $sql.= implode(' AND ',$rules);
+        $sql.= ';';
+
+        $this->_query = $sql;
     }
 
-    public function delete()
-    {
+    // ------------------------------------------------------------------------
 
+    /**
+     * Delete data
+     *
+     * @param	string
+     * @param	array
+     * @return	object
+     */
+    public function delete($table, $conditions)
+    {
+        $sql = 'DELETE FROM '.\O2ORM\Stringer::escape($table).' WHERE ';
+        foreach($conditions as $field => $value)
+        {
+            $rules[]= \O2ORM\Stringer::escape($field).'='.\O2ORM\Stringer::quote($value);
+        }
+
+        $sql.= implode(' AND ',$rules);
+        $sql.= ';';
+
+        $this->_query = $sql;
     }
 }
 
 /* End of file Query.php */
-/* Location: ./system/core/Database/drivers/Query.php */
+/* Location: ./O2ORM/Adapters/Query.php */

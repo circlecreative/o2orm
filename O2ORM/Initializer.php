@@ -27,273 +27,305 @@ namespace O2ORM;
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * @package     O2System
+ * @package     O2ORM
  * @author      Steeven Andrian Salim
  * @copyright   Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
  * @license     http://circle-creative.com/products/o2system/license.html
  * @license     http://opensource.org/licenses/MIT  MIT License
  * @link        http://circle-creative.com
- * @since       Version 2.0
+ * @since       Version 1.0
  * @filesource
  */
-
 // ------------------------------------------------------------------------
 
-defined('O2ORM_PATH') OR exit('No direct script access allowed');
+defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * Active Record Class
+ * Initializer
  *
- * @package		O2System
- * @subpackage	system/core
- * @category	Developer
- * @author		Steeven Andrian Salim
- * @link		http://circle-creative.com/products/o2orm/user-guide/active-records.html
+ * @package       O2ORM
+ * @subpackage
+ * @category      Core Class
+ * @author        Steeven Andrian Salim
+ * @link          http://steevenz.com
+ * @link          http://circle-creative.com/products/o2orm/user-guide/core/initializer.html
  */
-
 // ------------------------------------------------------------------------
 
 class Initializer
 {
     /**
-     * PDO connection flag
+     * Class config
      *
-     * @access public
+     * @access static protected
+     * @var array
+     */
+    protected static $_config;
+
+    /**
+     * Buffered connection flag
+     *
+     * @access static protected
+     * @var bool
+     */
+    protected static $_is_buffered = FALSE;
+
+    /**
+     * Stored schema session flag
+     *
+     * @access static protected
+     * @var bool
+     */
+    protected static $_is_stored_schema = FALSE;
+
+    /**
+     * Get next set of query result row
+     *
+     * @access static protected
+     * @var mixed
+     */
+    protected static $_conn;
+
+    /**
+     * Database Stream
+     *
+     * @access static public
+     * @var O2ORM\Database Object
+     */
+    public static $db;
+
+    /**
+     * Database is connected flag
+     *
+     * @access static public
      * @var bool
      */
     public static $is_connected = FALSE;
-    /**
-     * PDO connection stream
-     *
-     * @access public
-     * @var \PDO Object
-     */
-    public static $pdo = NULL;
-    /**
-     * O2ORM Builder Object
-     *
-     * @access public
-     * @var \O2ORM\Builder Object
-     */
-    public static $builder = NULL;
-    /**
-     * Active connection configuration
-     *
-     * @access private
-     * @var object
-     */
-    protected static $_conn;
-    /**
-     * PDO Constant Attributes List
-     *
-     * @access private
-     * @var \PDO Object
-     */
-    private static $_pdo_attributes = array(
-        \PDO::ATTR_AUTOCOMMIT => 'AUTOCOMMIT',
-        \PDO::ATTR_CASE => 'CASE',
-        \PDO::ATTR_CLIENT_VERSION => 'CLIENT_VERSION',
-        \PDO::ATTR_CONNECTION_STATUS => 'CONNECTION_STATUS',
-        \PDO::ATTR_DRIVER_NAME => 'DRIVER_NAME',
-        \PDO::ATTR_ERRMODE => 'ERRMODE',
-        //\PDO::ATTR_ORACLE_NULLS => 'ORACLE_NULLS',
-        \PDO::ATTR_PERSISTENT => 'PERSISTENT',
-        //\PDO::ATTR_PREFETCH => 'PREFETCH',
-        \PDO::ATTR_SERVER_INFO => 'SERVER_INFO',
-        \PDO::ATTR_SERVER_VERSION => 'SERVER_VERSION',
-        //\PDO::ATTR_TIMEOUT => 'TIMEOUT',
-    );
 
     /**
-     * PDO Compatible Drivers List
+     * Magic function to access static property
      *
-     * @access private
-     * @var array
+     * @access static public
+     * @var O2ORM\Initializer Property
      */
-    private static $_pdo_drivers = array(
-        'cubrid' => 'Cubrid',
-        'mysql' => 'MySQL',
-        'mssql' => 'MsSQL',
-        'firebird' => 'Firebird',
-        'ibm' => 'IBM',
-        'informix' => 'Informix',
-        'oracle' => 'Oracle',
-        'odbc' => 'ODBC',
-        'postgresql' => 'PostgreSQL',
-        'sqlite' => 'SQLite',
-        '4d' => '4D'
-    );
-
-    /**
-     * Default PDO Connection Options
-     *
-     * @access private
-     * @var array
-     */
-    private static $_pdo_options = array(
-        \PDO::ATTR_CASE => \PDO::CASE_NATURAL,
-        \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-        \PDO::ATTR_ORACLE_NULLS => \PDO::NULL_NATURAL,
-        \PDO::ATTR_STRINGIFY_FETCHES => FALSE,
-        \PDO::ATTR_EMULATE_PREPARES => FALSE,
-        \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, FALSE,
-        \PDO::ATTR_PERSISTENT => TRUE
-    );
-
-    /**
-     * PDO Last Run Query Stream
-     *
-     * @access private
-     * @var string
-     */
-    private static $_pdo_query = NULL;
-
-    /**
-     * Last Run Query
-     *
-     * @access private
-     * @var string
-     */
-    private static $_last_query = NULL;
-
-    /**
-     * Run Queries
-     *
-     * @access private
-     * @var string
-     */
-    private static $_queries = array();
-
-    public static function connect($buffered = FALSE)
+    public function __get($property)
     {
-        if(! in_array(strtolower(self::$_conn->driver), self::supported_drivers()))
+        if(property_exists(__CLASS__,$property))
         {
-            $message = 'Unsupported database driver: ' . self::$_pdo_drivers[self::$_conn->driver];
+            return self::$$property;
         }
+        return FALSE;
+    }
 
-        $dsn = array(
-            self::$_conn->driver . ':host=' . self::$_conn->host,
-            'port=' . self::$_conn->port,
-            'dbname=' . self::$_conn->database
-        );
+    // ------------------------------------------------------------------------
 
-        if(! empty(self::$_conn->charset))
+    /**
+     * Magic function to set static property
+     *
+     * @access static public
+     * @return void
+     */
+    public function __set($property, $value)
+    {
+        $property = '_'.$property;
+        if(isset(self::$$property))
         {
-            array_push($dsn, 'charset='.strtolower(self::$_conn->charset));
-        }
-
-        if(! empty(self::$_conn->collation))
-        {
-            array_push($dsn, 'collation='.strtolower(self::$_conn->collation));
-        }
-
-        self::$_conn->dsn = implode(';', $dsn);
-
-        self::$_conn->options = self::$_pdo_options;
-
-        if(self::$_conn->persistent === FALSE)
-        {
-            array_pop(self::$_conn->options);
-        }
-
-        try
-        {
-            self::$pdo = new \PDO(self::$_conn->dsn, self::$_conn->username, self::$_conn->password, self::$_conn->options);
-
-            // Disable Mysql Buffered
-            if($buffered === TRUE) self::$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, TRUE);
-
-            // We can now log any exceptions on Fatal error.
-            self::$pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-
-            // Disable emulation of prepared statements, use REAL prepared statements instead.
-            self::$pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, FALSE);
-
-            // Set Connection Flag
-            self::$is_connected = TRUE;
-        }
-        catch (\PDOException $e)
-        {
-            $message = 'O2System is unable to connect to database: ' . $e->getMessage();
-            log_message('error', $message);
-            show_error($message);
+            self::$$property = $value;
         }
     }
 
-    public static function supported_drivers()
+    // ------------------------------------------------------------------------
+
+    /**
+     * Magic function to call static function
+     *
+     * @access static public
+     * @return O2ORM\Initializer Static Function
+     */
+    public function __call($function, $args)
     {
-        return \PDO::getAvailableDrivers();
+        return self::$$function($args);
     }
 
-    public static function create($table)
+    // ------------------------------------------------------------------------
+
+    /**
+     * Magic function to set static property
+     *
+     * @access static public
+     * @var O2ORM\Database Object
+     */
+    public static function set($config)
     {
-        return self::$builder = new \O2ORM\Schema\Builder($table);
+        self::$_config = $config;
     }
 
-    public static function store()
-    {
-        return self::$builder->store();
-    }
+    // ------------------------------------------------------------------------
 
-    public static function conn_metadata()
+    /**
+     * Connect to Database using O2ORM\Database and PDO
+     *
+     * @access static public
+     * @return void
+     */
+    public static function connect($connection = 'default', $buffered = FALSE)
     {
-        $conn = new \O2ORM\Metadata();
-        $conn->driver = self::$_pdo_drivers[self::$_conn->driver];
-        $conn->port = self::$_conn->port;
-        $conn->database = self::$_conn->database;
-        $conn->dsn = self::$_conn->dsn;
-        $conn->status = self::$pdo->getAttribute(7);
-        $conn->persistent = self::$pdo->getAttribute(12);
-        @$conn->server->version = self::$pdo->getAttribute(4);
-
-        $server_info = explode('  ',self::$pdo->getAttribute(6));
-        foreach($server_info as $info)
+        if(isset(self::$_config[$connection]))
         {
-            $x_info = explode(' ', $info);
-            $info_name = strtolower(\O2ORM\Stringer::prepare(reset($x_info)));
-            $info_data = end($x_info);
-
-            if($info_name == 'queries')
+            if(empty(self::$_conn[$connection]))
             {
-                $info_name = 'queries_per_second_avg';
+                $conn = self::$_config[$connection];
+                self::$_conn[$connection] = new Database($conn, $buffered);
             }
 
-            @$conn->server->{$info_name} = $info_data;
+            self::$db = self::$_conn[$connection];
+            self::$db->charset = @$conn['charset'];
+            self::$db->collation = @$conn['collation'];
+            self::$db->prefix = @$conn['prefix'];
+            self::$db->stored_schema = @$conn['stored_schema'];
+
+            if($conn['stored_schema'] === TRUE)
+            {
+                self::stored_schema();
+            }
+
+            self::$is_connected = self::$db->is_connected;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Set stored schema flag
+     *
+     * @access static public
+     * @return void
+     */
+    public static function stored_schema($stored = TRUE)
+    {
+        self::$_is_stored_schema = $stored;
+
+        if(self::$_is_stored_schema)
+        {
+            $fields = \O2ORM\Schema\Structures::$storage;
+            self::$db->table->create('system_schema',$fields, array(
+                'engine' => 'MYISAM',
+                'increment' => TRUE,
+                'primary' => 'id',
+                'charset' => 'utf8',
+                'collate' => 'utf8_unicode_ci',
+                'comment' => 'O2ORM Database Information Schema'
+            ));
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Create Schema
+     *
+     * @access static public
+     * @return O2ORM\Schema\Mapper
+     */
+    public static function create($table, $options = array('engine' => 'MYISAM', 'increment' => TRUE, 'primary' => 'AUTO'))
+    {
+        self::$db->mapper = new \O2ORM\Schema\Mapper();
+
+        if(isset(self::$db->charset))
+        {
+            $options['charset'] = self::$db->charset;
         }
 
-        $conn->client_version = self::$pdo->getAttribute(5);
-        @$conn->pdo->auto_commit = self::$pdo->getAttribute(0);
-        @$conn->pdo->error_mode = self::$pdo->getAttribute(3);
-        @$conn->pdo->buffered = self::$pdo->getAttribute(12);
+        if(isset(self::$db->collation))
+        {
+            $options['collate'] = self::$db->collation;
+        }
 
-        return $conn;
+        if(isset(self::$db->prefix))
+        {
+            $options['prefix'] = self::$db->prefix;
+        }
+
+        self::$db->mapper->create($table, $options);
+        return self::$db->mapper;
     }
+
+    // ------------------------------------------------------------------------
 
     /**
-     * Database platform
+     * Freeze table schema
      *
-     * @access public
-     * @return string
+     * @access static public
+     * @return O2ORM\Schema\Mapper
      */
-    public static function platform()
+    public static function freeze($table)
     {
-        $platform = new \O2ORM\Metadata();
-        $platform->name = self::$_pdo_drivers[self::$_conn->driver];
-        $platform->version = self::$pdo->getAttribute(4);
-
-        return $platform;
+        return self::$db->mapper->freeze($table);
     }
+
+    // ------------------------------------------------------------------------
 
     /**
-     * Database platform version
+     * Store Table Schema
      *
-     * @access public
-     * @return string
+     * @access static public
+     * @return O2ORM\Schema\Mapper
      */
-    public static function version()
+    public static function store($object)
     {
-        return self::$pdo->getAttribute(4);
+        return self::$db->mapper->store($object);
     }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Read data on table
+     *
+     * @access static public
+     * @return O2ORM\Schema\Mapper
+     */
+    public static function read($table, $conditions)
+    {
+        if(is_numeric($conditions))
+        {
+            self::$db->query->from($table)->where(['id' => 1]);
+            $row = self::$db->row();
+            $row->table = $table;
+            return $row;
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Update data on table
+     *
+     * @access static public
+     * @return O2ORM\Schema\Mapper
+     */
+    public static function update($object)
+    {
+        $table = $object->table;
+        $id = $object->id;
+        unset($object->table, $object->id);
+        self::$db->update($table, get_object_vars($object), ['id' => $id]);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Delete data on table
+     *
+     * @access static public
+     * @return void
+     */
+    public static function delete($object)
+    {
+        $table = $object->table;
+        self::$db->delete($table, ['id' => $object->id]);
+    }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Close database connection
@@ -303,8 +335,10 @@ class Initializer
      */
     public function close()
     {
-        self::$_pdo_query = NULL;
-        self::$pdo = NULL;
         self::$is_connected = FALSE;
+        self::$db->close();
     }
 }
+
+/* End of file Initializer.php */
+/* Location: ./O2ORM/Initializer.php */

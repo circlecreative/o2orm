@@ -1,5 +1,5 @@
 <?php
-namespace O2ORM\Drivers\MySQL;
+namespace O2ORM\Abstracts;
 /**
  * O2ORM
  *
@@ -41,30 +41,35 @@ namespace O2ORM\Drivers\MySQL;
 defined('ORMPATH') OR exit('No direct script access allowed');
 
 /**
- * MySQL Table Driver Class
+ * Field Metadata Abstracts Class
  *
  * @package     O2ORM
- * @subpackage  Drivers
- * @category    Drivers Class
+ * @subpackage  Abstracts
+ * @category    Abstracts Class
  * @author      Steeven Andrian Salim
  * @link        http://steevenz.com
- * @link        http://circle-creative.com/products/o2orm/user-guide/drivers/table.html
+ * @link        http://circle-creative.com/products/o2orm/user-guide/abstracts/field-metadata.html
  */
 // ------------------------------------------------------------------------
 
-class Table extends \O2ORM\Adapters\Table
+abstract class FieldMetadata 
 {
-    /**
-     * Class constructor
-     *
-     * @access public
-     * @return void
-     */
-    public function __construct()
-    {
-
-    }
+    public $table;
+    public $name;
+    public $tick_name;
+    public $param_name;
+    public $alias_name;
+    public $type;
+    public $max_length;
+    public $null = 'YES';
+    public $primary_key = 'NO';
+    public $foreign_key = 'NONE';
+    public $references = 'NONE';
+    public $constraint = 'NO';
+    public $constraint_name = 'NONE';
+    public $indexes = 'NO';
+    public $indexes_name = 'NONE';
 }
 
-/* End of file Table.php */
-/* Location: ./O2ORM/Drivers/MySQL/Table.php */
+/* End of file FieldMetadata.php */
+/* Location: ./O2ORM/Interfaces/FieldMetadata.php */
