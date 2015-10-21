@@ -2,8 +2,7 @@
 	"name": "o2system/o2orm",
 	"description": "",
 	"license": "MIT",
-	"minimum-stability": "dev",
-	"version": "1.0.0",
+	"version": "1.0.0-beta",
 	"type": "php-libraries",
 	"keywords": ["utilities","php","framework","driver","libraries"],
 	"authors": [
@@ -36,7 +35,9 @@
 		"github-wiki": "http://github.com/circlecreative/o2orm/wiki"
 	},
 	"require": {
-		"php": ">=5.4.0"
+		"php": ">=5.4.0",
+		"o2system/o2glob" => "dev-master",
+		"o2system/o2db" => "dev-master"
 	},
 	"autoload": {
 		"psr-4": {
