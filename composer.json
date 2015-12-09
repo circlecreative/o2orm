@@ -1,8 +1,7 @@
 {
 	"name": "o2system/o2orm",
-	"description": "",
+	"description": "PHP Database Object Relation Mapping",
 	"license": "MIT",
-	"version": "1.0.0-beta",
 	"type": "php-libraries",
 	"keywords": ["utilities","php","framework","driver","libraries"],
 	"authors": [
@@ -36,16 +35,15 @@
 	},
 	"require": {
 		"php": ">=5.4.0",
-		"o2system/o2glob" => "dev-master",
-		"o2system/o2db" => "dev-master"
+		"o2system/o2glob": "1.*",
+		"o2system/o2db": "1.*"
 	},
 	"autoload": {
 		"psr-4": {
 			"O2System\\ORM\\": "src"
 		},
 		"files": [
-			"src/ORM.php",
-			"src/Helpers/inflector_helper.php"
+			"src/ORM.php"
 		]
 	}
 }
