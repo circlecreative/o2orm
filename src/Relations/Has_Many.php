@@ -42,8 +42,8 @@ namespace O2System\ORM\Relations;
 
 // ------------------------------------------------------------------------
 
-use O2System\ORM\Factory\Result;
-use O2System\ORM\Interfaces\Relation;
+use O2System\ORM;
+use O2System\ORM\Interfaces\Relations;
 
 /**
  * ORM Has Many Relationship Factory Class
@@ -54,7 +54,7 @@ use O2System\ORM\Interfaces\Relation;
  * @author          Circle Creative Dev Team
  * @link            http://o2system.center/wiki/#ORMBelongsTo
  */
-class Has_Many extends Relation
+class Has_Many extends Relations
 {
     /**
      * Result
@@ -69,30 +69,22 @@ class Has_Many extends Relation
      */
     public function result()
     {
-        if( $this->_foreign_key == '' )
+        if( $this->_related_model instanceof Model )
         {
-            $this->set_foreign_key();
+            return $this->_related_model->find( $this->_reference_model->{ $this->_reference_field }, $this->_related_field );
         }
-
-        if( $this->_reference_model instanceof Model )
+        else
         {
-            $query = $this->_reference_model->db->where( $this->_reference_model->primary_key, $this->_model->row()->{$this->_foreign_key} )
-                                                ->get( $this->_reference_model->table );
+            $query = $this->_reference_model->db->get_where( $this->_related_table, array(
+                $this->_related_field => $this->_reference_model->{ $this->_reference_field }
+            ) );
 
-            if( $query->num_rows() > 0 )
+            if($query->num_rows() > 0)
             {
-                return $query->result( new Result( $this->_reference_model ) );
+                return $query->result();
             }
         }
-        elseif( ! empty( $this->_reference_table ) )
-        {
-            $query = $this->_model->db->where( $this->_reference_key, $this->_model->row()->{$this->_foreign_key} )
-                                      ->get( $this->_reference_table );
 
-            if( $query->num_rows() > 0 )
-            {
-                return $query->result( new Result( $this->_model ) );
-            }
-        }
+        return array();
     }
 }

@@ -44,8 +44,7 @@ defined( 'BASEPATH' ) || exit( 'No direct script access allowed' );
 // ------------------------------------------------------------------------
 
 use O2System\ORM;
-use O2System\ORM\Factory\Relation;
-use O2System\ORM\Factory\Query;
+use O2System\ORM\Interfaces\Relations;
 
 /**
  * ORM Belongs To Many Relationship Factory Class
@@ -56,18 +55,37 @@ use O2System\ORM\Factory\Query;
  * @author          Circle Creative Dev Team
  * @link            http://o2system.center/wiki/#ORMBelongsToMany
  */
-class Belongs_to_many extends Relation
+class Belongs_To_Many extends Relations
 {
-
     /**
      * Result
      *
-     * Abstract: extended class of Relation must implements result method
+     * Belongs to query result
      *
-     * @return mixed
+     * @access  public
+     *
+     * @uses    O2System\ORM\Factory\Query
+     *
+     * @return  mixed
      */
     public function result()
     {
-        // TODO: Implement result() method.
+        if( $this->_related_model instanceof Model )
+        {
+            return $this->_related_model->find( $this->_reference_model->{ $this->_reference_field }, $this->_related_field );
+        }
+        else
+        {
+            $query = $this->_reference_model->db->get_where( $this->_related_table, array(
+                $this->_related_field => $this->_reference_model->{ $this->_reference_field }
+            ) );
+
+            if($query->num_rows() > 0)
+            {
+                return $query->result();
+            }
+        }
+
+        return array();
     }
 }

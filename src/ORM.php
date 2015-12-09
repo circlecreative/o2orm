@@ -43,677 +43,284 @@ namespace O2System\ORM;
 // ------------------------------------------------------------------------
 
 use O2System\DB;
+use O2System\Gears\Tracer;
+use O2System\Glob\Helpers\Inflector;
+use O2System\ORM\Factory\Row;
+use O2System\ORM\Interfaces\Table;
 
 class Model
 {
-    public $db;
-    public $table;
-    public $primary_key  = 'id';
-    public $primary_keys = array( 'id' );
-
-    public $table_prefixes = array(
-        '', // none prefix
-        'tm_', // table master prefix
-        't_', // table data prefix
-        'tr_', // table relation prefix
-        'ts_', // table statistic prefix
-        'tb_', // table buffer prefix
-    );
-
-    public $mapper;
-
-    public function __construct()
-    {
-        // set mapper instance
-        if( ! isset( $this->mapper ) )
-        {
-            $this->mapper = new Factory\Mapper( $this );
-        }
-    }
-
-    public function load_database( $connection = NULL )
-    {
-        if( ! isset( $this->db ) AND isset( $connection ) )
-        {
-            $DB = new DB();
-            $this->db = $DB->connect( $connection );
-        }
-    }
-
-    /**
-     * All
-     *
-     * Get all rows of table
-     *
-     * @param   array $conditions Where clause conditions
-     *
-     * @access  public
-     * @return  array
-     */
-    public function all( $conditions = array() )
-    {
-        $fields = $this->db->list_fields( $this->table );
-
-        // Sort by record left
-        if( in_array( 'record_left', $fields ) )
-        {
-            $this->db->order_by( 'record_left', 'ASC' );
-        }
-
-        // Sort by record ordering
-        if( in_array( 'record_ordering', $fields ) )
-        {
-            $this->db->order_by( 'record_ordering', 'ASC' );
-        }
-
-        if( ! empty( $conditions ) )
-        {
-            $this->db->where( $conditions );
-        }
-
-        $query = $this->db->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            return $query->result( '\O2System\ORM\Factory\Result', $this );
-        }
-
-        return array();
-    }
-
-    /**
-     * Rows
-     *
-     * Alias for All Method
-     *
-     * @param   array $conditions Where clause conditions
-     *
-     * @access  public
-     * @return  array
-     */
-    public function rows( $conditions = array() )
-    {
-        return $this->all( $conditions );
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find
-     *
-     * Find single record base on criteria by specific field
-     *
-     * @param   string      $criteria Criteria value
-     * @param   string|null $field    Table column field name | set to primary key by default
-     *
-     * @access  public
-     * @return  null|object  O2System\ORM\Factory\Result
-     */
-    public function find( $criteria, $field = NULL )
-    {
-        $field = isset( $field ) ? $field : $this->primary_key;
-
-        // build relations mapper
-        $this->mapper->build();
-
-        $query = $this->db->limit( 1 )->where( $field, $criteria )->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            $result = new Factory\Result( $this );
-
-            return $query->first_row( $result );
-        }
-
-        return NULL;
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find By
-     *
-     * Find single record based on certain conditions
-     *
-     * @param   array $conditions List of conditions with criteria
-     *
-     * @access  public
-     * @return  null|object O2System\ORM\Factory\Result
-     */
-    public function find_by( array $conditions )
-    {
-        // build relations mapper
-        $this->mapper->build();
-
-        $query = $this->db->limit( 1 )->where( $conditions )->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            $result = new Factory\Result( $this );
-
-            return $query->first_row( $result );
-        }
-
-        return NULL;
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find In
-     *
-     * Find many records within criteria on specific field
-     *
-     * @param   array  $in_criteria List of criteria
-     * @param   string $field       Table column field name | set to primary key by default
-     *
-     * @access  public
-     * @return  array
-     */
-    public function find_in( array $in_criteria, $field = 'id' )
-    {
-        $field = isset( $field ) ? $field : $this->primary_key;
-
-        // build relations mapper
-        $this->mapper->build();
-
-        $query = $this->db->where_in( $field, $in_criteria )->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            return $query->result( '\O2System\ORM\Factory\Result', $this );
-        }
-
-        return array();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find In
-     *
-     * Find many records not within criteria on specific field
-     *
-     * @param   array  $not_in_criteria List of criteria
-     * @param   string $field           Table column field name | set to primary key by default
-     *
-     * @access  public
-     * @return  array
-     */
-    public function find_not_in( array $not_in_criteria, $field = 'id' )
-    {
-        $field = isset( $field ) ? $field : $this->primary_key;
-
-        // build relations mapper
-        $this->mapper->build();
-
-        $query = $this->db->where_in( $field, $not_in_criteria )->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            return $query->result( '\O2System\ORM\Factory\Result', $this );
-        }
-
-        return array();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find Many
-     *
-     * Find many records within criteria on specific field
-     *
-     * @param   array  $criteria Criteria value
-     * @param   string $field    Table column field name | set to primary key by default
-     *
-     * @access  public
-     * @return  array
-     */
-    public function find_many( $criteria, $field = NULL )
-    {
-        $field = isset( $field ) ? $field : $this->primary_key;
-
-        // build relations mapper
-        $this->mapper->build();
-
-        $query = $this->db->where( $field, $criteria )->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            return $query->result( '\O2System\ORM\Factory\Result', $this );
-        }
-
-        return array();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Find Many By
-     *
-     * Find many records based on certain conditions
-     *
-     * @access  public
-     *
-     * @param array $conditions list of conditions with criteria
-     *
-     * @return null|object  O2System\ORM\Factory\Result
-     */
-    public function find_many_by( array $conditions )
-    {
-        // build relations mapper
-        $this->mapper->build();
-
-        foreach( $conditions as $field => $in_criteria )
-        {
-            if( is_string( $in_criteria ) )
-            {
-                $this->db->where( $field, $in_criteria );
-            }
-            elseif( is_array( $in_criteria ) )
-            {
-                $this->db->where_in( $field, $in_criteria );
-            }
-        }
-
-        $query = $this->db->get( $this->table );
-
-        if( $query->num_rows() > 0 )
-        {
-            return $query->result( '\O2System\ORM\Factory\Result', $this );
-        }
-
-        return array();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Row
-     *
-     * Get single row of model query result
-     *
-     * @access  public
-     *
-     * @uses    O2System\ORM\Factory\Query()
-     *
-     * @return null|object  O2System\ORM\Factory\Result
-     */
-    public function row()
-    {
-        if( isset( $this->row ) )
-        {
-            return $this->row;
-        }
-        else
-        {
-            // build relation mapper
-            $this->mapper->build();
-
-            $query = $this->db->from( $this->table )->get();
-
-            if( $query->num_rows() > 0 )
-            {
-                $result = new Factory\Result( $this );
-
-                return $query->first_row( $result );
-            }
-        }
-
-        return NULL;
-    }
-    // ------------------------------------------------------------------------
-
-
-    /**
-     * Belongs To
-     *
-     * Define an inverse one-to-one or many relationship.
-     *
-     * @access  public
-     * @final   this method can't be overwrite
-     *
-     * @uses    O2System\ORM\Relations\Belongs_to()
-     *
-     * @param string $reference   table name, model name or instance of ORM model
-     * @param null   $foreign_key working table foreign key
-     *
-     * @return mixed
-     */
-    final public function belongs_to( $reference, $foreign_key = NULL )
-    {
-        $belongs_to = new Relations\Belongs_To( $this );
-
-        $belongs_to->set_reference( $reference );
-
-        if( isset( $foreign_key ) )
-        {
-            $belongs_to->set_foreign_key( $foreign_key );
-        }
-
-        return $belongs_to->result();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Define a many-to-many relationship.
-     *
-     * @param  string $related
-     * @param  string $table
-     * @param  string $foreign_key
-     * @param  string $other_key
-     * @param  string $relation
-     *
-     * @return array
-     */
-    public function belongs_to_many( $related, $table = NULL, $foreign_key = NULL, $other_key = NULL, $relation = NULL )
-    {
-        $belongs_to_many = new Relations\Belongs_To_Many( $this );
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Has One
-     *
-     * Define a one-to-one relationship.
-     *
-     * @access  public
-     * @final   this method can't be overwrite
-     *
-     * @uses    O2System\ORM\Relations\Has_one()
-     *
-     * @param string $reference   table name, model name or instance of ORM model
-     * @param null   $foreign_key working table foreign key
-     *
-     * @return mixed
-     */
-    final public function has_one( $reference, $foreign_key = NULL )
-    {
-        $has_many = new Relations\Has_one( $this );
-
-        if( strpos( $reference, '.' ) !== FALSE )
-        {
-            $x_reference = explode( '.', $reference );
-
-            $has_many->set_reference( $x_reference[ 0 ] );
-            $has_many->set_reference_key( $x_reference[ 1 ] );
-        }
-        else
-        {
-            $has_many->set_reference( $reference );
-        }
-
-        if( isset( $foreign_key ) )
-        {
-            $has_many->set_foreign_key( $foreign_key );
-        }
-
-        return $has_many->result();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Has Many
-     *
-     * Define a one-to-many relationship.
-     *
-     * @access  public
-     * @final   this method can't be overwrite
-     *
-     * @uses    O2System\ORM\Relations\Has_one()
-     *
-     * @param string $reference   table name, model name or instance of ORM model
-     * @param null   $foreign_key working table foreign key
-     *
-     * @return mixed
-     */
-    public function has_many( $reference, $foreign_key = NULL )
-    {
-        $has_many = new Relations\Has_Many( $this );
-
-        $has_many->set_reference( $reference );
-
-        if( isset( $foreign_key ) )
-        {
-            $has_many->set_foreign_key( $foreign_key );
-        }
-
-        return $has_many->result();
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Define a has-many-through relationship.
-     *
-     * @param  string      $related
-     * @param  string      $through
-     * @param  string|null $first_key
-     * @param  string|null $second_key
-     *
-     */
-    public function has_many_through( $related, $through, $first_key = NULL, $second_key = NULL )
-    {
-        $has_many_through = new Relations\Has_many_through( $this );
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Define a polymorphic one-to-many relationship.
-     *
-     * @param  string      $related
-     * @param  string      $name
-     * @param  string|null $type
-     * @param  string|null $id
-     * @param  string|null $local_key
-     *
-     */
-    public function morph_many( $related, $name, $type = NULL, $id = NULL, $local_key = NULL )
-    {
-        $morph_many = new Relations\Morph_many( $this );
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Define a polymorphic many-to-many relationship.
-     *
-     * @param  string $related
-     * @param  string $name
-     * @param  string $table
-     * @param  string $foreign_key
-     * @param  string $other_key
-     * @param  bool   $inverse
-     *
-     */
-    public function morph_to_many( $related, $name, $table = NULL, $foreign_key = NULL, $other_key = NULL, $inverse = FALSE )
-    {
-        $morph_to_many = new Relations\Morph_to_many( $this );
-    }
-    // ------------------------------------------------------------------------
-
-    /**
-     * Set the relationships that should be eager loaded.
-     *
-     * @access  public
-     *
-     * @uses    O2System\ORM\Relations\With()
-     *
-     * @return $this
-     */
-    public function with()
-    {
-        $with = new Relations\With( $this );
-        $with->set_references( func_get_args() );
-
-        return $this;
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Has
-     *
-     * Set relationship based on table name, model name, or instance of ORM model
-     *
-     * @access  public
-     *
-     * @uses    O2System\ORM\Relations\With()
-     *
-     * @return $this
-     */
-    public function has()
-    {
-        $has = new Relations\Has( $this );
-        $has->set_references( func_get_args() );
-
-        return $this;
-    }
-
-    /**
-     * @param array $row
-     */
-    public function insert(array $row)
-    {
-
-    }
-
-    /**
-     * Insert multiple rows into the table. Returns an array of multiple IDs.
-     *
-     * @param array $row
-     *
-     * @return mixed
-     */
-    public function insert_many( array $row )
-    {
-        // TODO: Implement insert_many() method.
-    }
-    // ------------------------------------------------------------------------
-
-    public function update($row)
-    {
-
-    }
-
-    public function update_by($row, $conditions)
-    {
-
-    }
-
-    /**
-     * Updated a record based on sets of ids.
-     *
-     * @param array $ids
-     * @param array $data
-     *
-     * @return mixed
-     */
-    public function update_many( array $ids, array $data = array() )
-    {
-        // TODO: Implement update_many() method.
-    }
-    // ------------------------------------------------------------------------
-
-    public function trash($id)
-    {
-
-    }
-
-    public function trash_by($id, $conditions = array())
-    {
-
-    }
-
-    /**
-     * Trash many rows from the database table based on sets of ids.
-     *
-     * @param array $ids
-     *
-     * @return mixed
-     */
-    public function trash_many( array $ids )
-    {
-        // TODO: Implement trash_many() method.
-    }
-    // ------------------------------------------------------------------------
-
-    public function trash_many_by(array $ids, $conditions = array())
-    {
-
-    }
-
-    public function delete($id)
-    {
-
-    }
-
-    public function delete_by($id, $conditions = array())
-    {
-
-    }
-
-    /**
-     * Delete many rows from the database table based on sets of ids.
-     *
-     * @param array $ids
-     *
-     * @return mixed
-     */
-    public function delete_many( array $ids )
-    {
-        // TODO: Implement delete_many() method.
-    }
-
-    public function delete_many_by(array $ids, $conditions = array())
-    {
-
-    }
+	/**
+	 * O2DB Resource
+	 *
+	 * @access  public
+	 * @type    \O2System\DB
+	 */
+	public $db = NULL;
+
+	/**
+	 * Model Table
+	 *
+	 * @access  public
+	 * @type    string
+	 */
+	public $table = NULL;
+
+	/**
+	 * Model Table Fields
+	 *
+	 * @access  public
+	 * @type    array
+	 */
+	public $fields = array();
+
+	/**
+	 * Model Table Primary Key
+	 *
+	 * @access  public
+	 * @type    string
+	 */
+	public $primary_key = 'id';
+
+	/**
+	 * Model Table Primary Keys
+	 *
+	 * @access  public
+	 * @type    array
+	 */
+	public $primary_keys = array();
+
+	/**
+	 * Model Table Relations
+	 *
+	 * @access  public
+	 * @type    array
+	 */
+	public $relations = array();
+
+	/**
+	 * Model Table Record User Model
+	 *
+	 * @access  public
+	 * @type    array
+	 */
+	public $record_user_model = NULL;
+
+	// ------------------------------------------------------------------------
+
+	/**
+	 * Class Constructor
+	 *
+	 * @params  array $data
+	 *
+	 * @access  public
+	 */
+	public function __construct( array $data = array() )
+	{
+		// Set table fields
+		if ( isset( $this->table ) )
+		{
+			$this->fields = $this->db->list_fields( $this->table );
+		}
+
+		if ( ! empty( $data ) )
+		{
+			$this->set_data( $data );
+		}
+
+		// Set Result Class
+		//$this->db->set_row_class( '\O2System\ORM\Factory\Row', [ &$this ] );
+	}
+
+	// ------------------------------------------------------------------------
+
+	/**
+	 * Set Data
+	 *
+	 * @params  array $field
+	 * @params  mixed $value
+	 *
+	 * @access  public
+	 */
+	public function set_data( $field, $value = NULL )
+	{
+		if ( is_array( $field ) )
+		{
+			foreach ( $field as $key => $value )
+			{
+				$this->__set( $key, $value );
+			}
+		}
+		else
+		{
+			$this->__set( $field, $value );
+		}
+	}
+
+	/**
+	 * Set Data
+	 *
+	 * @params  string $field
+	 * @params  mixed  $value
+	 *
+	 * @access  public
+	 */
+	public function __set( $field, $value )
+	{
+		$setter = "set_" . Inflector::underscore( $field );
+
+		if ( method_exists( $this, $setter ) )
+		{
+			$value = call_user_func( array( $this, $setter ), $value );
+			$this->set_data( $field, $value );
+		}
+		else
+		{
+			$this->{$field} = $value;
+		}
+	}
+
+	/**
+	 * Get Data
+	 *
+	 * @params  string $field
+	 *
+	 * @access  public
+	 */
+	public function &__get( $field )
+	{
+		$prop[ 0 ] = '';
+
+		if ( property_exists( $this, $field ) )
+		{
+			$prop[ 0 ] = $this->{$field};
+		}
+		elseif ( isset( $this->data->{$field} ) )
+		{
+			$getter = 'get_' . Inflector::underscore( $field );
+
+			if ( method_exists( $this, $getter ) )
+			{
+				$prop[ 0 ] = $this->{$getter}();
+			}
+		}
+
+		return $prop[ 0 ];
+	}
+
+	// ------------------------------------------------------------------------
+
+	/**
+	 * Magic function __call
+	 *
+	 * @params  string $method
+	 * @params  array  $args
+	 *
+	 * @access  public
+	 */
+	public function __call( $method, $args = array() )
+	{
+		if ( method_exists( $this, $method ) )
+		{
+			return call_user_func_array( array( $this, $method ), $args );
+		}
+		elseif ( method_exists( $this->db, $method ) )
+		{
+			return call_user_func_array( array( $this->db, $method ), $args );
+		}
+		elseif ( method_exists( $this, 'scope_' . $method ) )
+		{
+			return call_user_func_array( array( $this, 'scope_' . $method ), $args );
+		}
+		else
+		{
+			$table = plural( str_replace( 'get_', '', $method ) );
+
+			if ( strpos( $method, 'master' ) !== FALSE )
+			{
+				$table = 'tm_' . str_replace( [ '_master', 'master_' ], '', $table );
+			}
+			elseif ( strpos( $method, 'buffer' ) !== FALSE OR strpos( $method, 'buffers' ) !== FALSE )
+			{
+				$table = 'tb_' . str_replace( [ '_buffer', '_buffers', 'buffer_', 'buffers_' ], '', $table );
+			}
+			elseif ( strpos( $method, 'relation' ) !== FALSE OR strpos( $method, 'relations' ) !== FALSE )
+			{
+				$table = 'tr_' . str_replace( [ '_relation', '_relations', 'relation_', 'relations_' ], '', $table );
+			}
+			elseif ( strpos( $method, 'statistic' ) !== FALSE OR strpos( $method, 'statistics' ) !== FALSE )
+			{
+				$table = 'ts_' . str_replace( [ '_statistic', '_statistics', 'statistic_', 'statistics_' ], '', $table );
+			}
+
+			foreach ( $this->table_prefixes as $prefix )
+			{
+				if ( $this->db->table_exists( $prefix . $table ) )
+				{
+					if ( ! empty( $params ) )
+					{
+						if ( ! is_array( reset( $params ) ) )
+						{
+							$params = array( 'id' => reset( $params ) );
+						}
+						else
+						{
+							$params = reset( $params );
+						}
+
+						return $this->all( $params );
+					}
+					else
+					{
+						return $this->all();
+					}
+				}
+			}
+		}
+
+		return array();
+	}
+
+	// ------------------------------------------------------------------------
+
+	/**
+	 * Magic function __callStatic
+	 *
+	 * @params  string $method
+	 * @params  array  $args
+	 *
+	 * @access  public
+	 */
+	public static function __callStatic( $method, $args = array() )
+	{
+		$model = get_called_class();
+
+		return ( new $model )->__call( $method, $args );
+	}
+
+	// ------------------------------------------------------------------------
+
+
+	/**
+	 * Paging
+	 *
+	 * @param int $page
+	 * @param int $entries
+	 */
+	protected function page( $page = 1, $entries = 20 )
+	{
+		if ( $page == 1 )
+		{
+			$this->db->limit( $entries, 0 );
+			$this->numbering = 1;
+		}
+		else
+		{
+			$offset = ( $page - 1 ) * $entries;
+			$this->db->limit( $entries, $offset );
+			$this->numbering = 1 + $offset;
+		}
+
+		return $this->all();
+	}
 }
-
-use O2System\Gears\Tracer;
-
-class Exception extends \Exception
-{
-    /**
-     * Class Constructor
-     *
-     * @param null       $message
-     * @param int        $code
-     * @param \Exception $previous
-     */
-    public function __construct( $message = NULL, $code = 0, \Exception $previous = NULL )
-    {
-        parent::__construct( $message, $code, $previous );
-        set_exception_handler( '\O2System\ORM\Exception::exception_handler' );
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Exception Handler
-     *
-     * @param $exception
-     */
-    public static function exception_handler( $exception )
-    {
-        $tracer = new Tracer( (array)$exception->getTrace() );
-
-        if( PHP_SAPI === 'cli' )
-        {
-            $template = __DIR__ . '/Views/cli_exception.php';
-        }
-        else
-        {
-            $template = __DIR__ . '/Views/html_exception.php';
-        }
-
-        if( ob_get_level() > 1 )
-        {
-            ob_end_flush();
-        }
-
-        header( 'HTTP/1.1 500 Internal Server Error', TRUE, 500 );
-
-        ob_start();
-        include( $template );
-        $buffer = ob_get_contents();
-        ob_end_clean();
-        echo $buffer;
-
-        exit( 1 );
-    }
-}
-

@@ -38,54 +38,50 @@
 
 // ------------------------------------------------------------------------
 
-namespace O2System\ORM\Relations;
-defined( 'BASEPATH' ) || exit( 'No direct script access allowed' );
+namespace O2System\ORM\Factory;
 
 // ------------------------------------------------------------------------
 
-use O2System\ORM;
-use O2System\ORM\Interfaces\Relations;
+use O2System\DB\Factory\Row as RowInterface;
 
 /**
- * ORM Has One Relationship Factory Class
+ * Row Object Class
  *
- * @package         O2System
- * @subpackage      core/orm/factory
- * @category        core libraries driver factory
- * @author          Circle Creative Dev Team
- * @link            http://o2system.center/wiki/#ORMHasOne
+ * @author      O2System Developer Team
+ * @link        http://o2system.in/features/o2db/metadata/result
  */
-class Has_One extends Relations
+class Row extends RowInterface
 {
-    /**
-     * Result
-     *
-     * Belongs to query result
-     *
-     * @access  public
-     *
-     * @uses    O2System\ORM\Factory\Query
-     *
-     * @return  mixed
-     */
-    public function result()
-    {
-        if( $this->_related_model instanceof Model )
-        {
-            return $this->_related_model->find( $this->_reference_model->{ $this->_reference_field }, $this->_related_field );
-        }
-        else
-        {
-            $query = $this->_reference_model->db->get_where( $this->_related_table, array(
-                $this->_related_field => $this->_reference_model->{ $this->_reference_field }
-            ), 1 );
+	protected $_model;
 
-            if($query->num_rows() > 0)
-            {
-                return $query->first_row();
-            }
-        }
+	public function __construct( $model )
+	{
+		$this->_model = $model;
+	}
 
-        return NULL;
-    }
+	// ------------------------------------------------------------------------
+
+	/**
+	 * Call Override
+	 *
+	 * This method is act as magic method, inspired from Laravel Eloquent ORM
+	 *
+	 * @access  public
+	 *
+	 * @param   string $method
+	 * @param   array  $args
+	 *
+	 * @return  mixed
+	 */
+	public function __call( $method, $args = array() )
+	{
+		foreach ( get_object_vars( $this ) as $key => $value )
+		{
+			$this->_model->__set( $key, $value );
+		}
+
+		return $this->_model->__call( $method, $args );
+	}
+
+	// ------------------------------------------------------------------------
 }

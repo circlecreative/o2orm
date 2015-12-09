@@ -42,6 +42,7 @@ namespace O2System\ORM\Factory;
 
 // ------------------------------------------------------------------------
 use O2System\ORM\Model;
+use O2System\ORM\Relations\Reference;
 
 /**
  * ORM Mapper Factory Class
@@ -78,18 +79,61 @@ class Mapper
     public function __construct( Model $model )
     {
         $this->_model =& $model;
+
+        if( ! isset( $this->_model->table ) )
+        {
+            $class_name = get_class( $model );
+            $class_name = explode( '\\', $class_name );
+            $table = strtolower( end( $class_name ) );
+
+            if( $this->_model->db->table_exists( $table ) )
+            {
+                $this->_model->table = $table;
+            }
+        }
     }
 
     // ------------------------------------------------------------------------
 
-    public function find_table( $table )
+    public function set( $table = NULL )
     {
+        $this->_map = array();
+        $table = isset( $table ) ? $this->_model->table : $table;
 
-    }
+        if( isset( $table ) )
+        {
+            if( empty( $this->_model->fields ) )
+            {
+                $this->_model->fields = $this->_model->db->list_fields( $table );
+            }
 
-    public function find_field( $field, $table )
-    {
+            if( empty( $this->_model->primary_key ) OR empty( $this->_model->primary_keys ) )
+            {
+                if( in_array( 'id', $this->_model->fields ) )
+                {
+                    $this->_model->_primary_key = 'id';
+                    $this->_model->primary_keys[] = 'id';
+                }
 
+                if( in_array( 'id', $this->_model->fields ) AND in_array( 'lang', $this->_model->fields ) )
+                {
+                    $this->_model->primary_keys = [ 'id', 'lang' ];
+                }
+            }
+
+            // Automapper
+            foreach( $this->_model->fields as $field )
+            {
+                if( substr( $field, 0, 3 ) === 'id_' AND $field !== 'id_parent' )
+                {
+                    $this->add( $field, substr( $field, 3 ) );
+                }
+                elseif( substr( $field, -3 ) === '_id' AND $field !== 'parent_id' )
+                {
+                    $this->add( $field, substr( $field, 0, -3 ) );
+                }
+            }
+        }
     }
 
     /**
@@ -101,27 +145,40 @@ class Mapper
      *
      * @uses    \ArrayObject()
      *
-     * @property-write  $_map
-     *
-     * @param string    $reference_alias  reference object name alias
-     * @param string    $foreign_key      working table foreign key
-     * @param string    $reference_table  reference table name
-     * @param string    $reference_index  reference table primary key
-     * @param array     $reference_fields list of reference table fields
-     *
      * @return  $this
      */
-    public function add( $foreign_key, $reference_alias, $reference_table, $reference_index, array $reference_fields )
+    public function add( Reference $reference )
     {
-        $this->_map[ $reference_alias ] = new \ArrayObject( array(
-                                                                'reference_alias'  => $reference_alias,
-                                                                'foreign_key'      => $foreign_key,
-                                                                'reference_table'  => $reference_table,
-                                                                'reference_index'  => $reference_index,
-                                                                'reference_fields' => $reference_fields
-                                                            ), \ArrayObject::ARRAY_AS_PROPS );
+        if( ! isset( $reference_table ) )
+        {
+            $x_reference_alias = explode( '_', $reference_alias );
+            $x_reference_alias = array_map( array( $this, 'plural' ), $x_reference_alias );
+            $reference_table = implode( '_', $x_reference_alias );
+            $reference_index = trim( str_replace( $reference_alias, '', $foreign_key ), '_' );
+        }
 
-        return $this;
+        foreach( $this->_model->table_prefixes as $table_prefix )
+        {
+            if( $this->_model->db->table_exists( $table_prefix . $reference_table ) )
+            {
+                if( empty( $reference_fields ) )
+                {
+                    $reference_fields = $this->_model->db->list_fields( $table_prefix . $reference_table );
+                }
+
+                $this->_map[ $reference_alias ] = new \ArrayObject( array(
+                                                                        'reference_alias'  => $reference_alias,
+                                                                        'foreign_key'      => $foreign_key,
+                                                                        'reference_table'  => $table_prefix . $reference_table,
+                                                                        'reference_index'  => $reference_index,
+                                                                        'reference_fields' => $reference_fields
+                                                                    ), \ArrayObject::ARRAY_AS_PROPS );
+
+                return $this;
+            }
+        }
+
+
     }
 
     // ------------------------------------------------------------------------
@@ -137,7 +194,7 @@ class Mapper
      *
      * @return  $this
      */
-    public function relation( $relation = 'left' )
+    public function set_relation( $relation = 'left' )
     {
         $this->_relation = $relation;
 
@@ -155,7 +212,7 @@ class Mapper
      */
     public function build()
     {
-        $selects[ ] = $this->_model->table . '.*';
+        $selects[] = $this->_model->table . '.*';
 
         if( ! empty( $this->_map ) )
         {
@@ -165,7 +222,7 @@ class Mapper
 
                 foreach( $map->reference_fields as $field )
                 {
-                    $selects[ ] = $map->reference_table . '.' . $field . ' AS ' . $map->reference_alias . '_' . $field;
+                    $selects[] = $map->reference_table . '.' . $field . ' AS ' . $map->reference_alias . '_' . $field;
                 }
             }
         }

@@ -42,9 +42,9 @@ namespace O2System\ORM\Relations;
 
 // ------------------------------------------------------------------------
 
-use O2System\ORM\Factory\Result;
-use O2System\ORM\Interfaces\Relation;
 use O2System\ORM\Model;
+use O2System\ORM\Interfaces\Relations;
+use O2System\ORM\Factory\Result;
 
 /**
  * ORM Belongs To Relationship Factory Class
@@ -55,7 +55,7 @@ use O2System\ORM\Model;
  * @author          Circle Creative Dev Team
  * @link            http://o2system.center/wiki/#ORMBelongsTo
  */
-class Belongs_To extends Relation
+class Belongs_To extends Relations
 {
     /**
      * Result
@@ -70,62 +70,22 @@ class Belongs_To extends Relation
      */
     public function result()
     {
-        if( $this->_reference_model instanceof Model )
+        if( $this->_related_model instanceof Model )
         {
-            if(method_exists($this->_reference_model, 'get_row'))
-            {
-                return $this->_reference_model->get_row();
-            }
-            elseif( ! empty( $this->_reference_model->primary_key ) )
-            {
-                if( $this->_foreign_key == '' )
-                {
-                    $this->set_foreign_key();
-                }
+            return $this->_related_model->find( $this->_reference_model->{ $this->_reference_field }, $this->_related_field );
+        }
+        else
+        {
+            $query = $this->_reference_model->db->get_where( $this->_related_table, array(
+                $this->_related_field => $this->_reference_model->{ $this->_reference_field }
+            ), 1 );
 
-                return $this->_reference_model->find( $this->_model->row()->{$this->_foreign_key}, $this->_reference_model->primary_key );
-            }
-            elseif( ! empty( $this->_reference_model->primary_keys ) )
+            if($query->num_rows() > 0)
             {
-                foreach( $this->_reference_model->primary_keys as $key => $primary_key )
-                {
-                    $conditions[ $primary_key ] = $this->_model->row()->{$this->_foreign_keys[ $key ]};
-                }
-
-                return $this->_reference_model->find_by( $conditions );
+                return $query->first_row();
             }
         }
-        elseif( ! empty( $this->_model->table ) )
-        {
-            if(method_exists($this->_model, 'get_row'))
-            {
-                return $this->_model->get_row();
-            }
-            else
-            {
-                if( $this->_foreign_key == '' )
-                {
-                    $this->set_foreign_key();
-                }
 
-                return $this->_model->find_by( [ $this->_reference_key => $this->_model->row()->{$this->_foreign_key} ] );
-            }
-        }
-        elseif( ! empty( $this->_reference_table ) )
-        {
-            if( $this->_foreign_key == '' )
-            {
-                $this->set_foreign_key();
-            }
-
-            $query = $this->_model->db->limit( 1 )
-                                      ->where( $this->_reference_key, $this->_model->row()->{$this->_foreign_key} )
-                                      ->get( $this->_reference_table );
-
-            if( $query->num_rows() > 0 )
-            {
-                return $query->first_row( new Result( $this->_model ) );
-            }
-        }
+        return NULL;
     }
 }

@@ -1,8 +1,8 @@
 <?php
 /**
- * O2System
+ * O2ORM
  *
- * An open source application development framework for PHP 5.4 or newer
+ * Open Source PHP Object Relations Mapper Library for PHP 5.4 or newer
  *
  * This content is released under the MIT License (MIT)
  *
@@ -32,32 +32,30 @@
  * @license        http://circle-creative.com/products/o2system/license.html
  * @license        http://opensource.org/licenses/MIT	MIT License
  * @link           http://circle-creative.com
- * @since          Version 2.0
  * @filesource
  */
 
 // ------------------------------------------------------------------------
 
 namespace O2System\ORM\Relations;
-defined( 'BASEPATH' ) || exit( 'No direct script access allowed' );
 
 // ------------------------------------------------------------------------
 
-use O2System\Core\Loader;
-use O2System\ORM;
-use O2System\ORM\Factory\Relation;
+use O2System\Glob\Helpers\Inflector;
+use O2System\ORM\Interfaces\Relations;
+use O2System\ORM\Interfaces\Table;
 
 /**
- * ORM With Relation Factory Class
+ * ORM Has Relation Factory Class
  *
- * @package         O2System
- * @subpackage      core/orm/relations
- * @category        core libraries driver factory
+ * @package         o2orm
  * @author          Circle Creative Dev Team
- * @link            http://o2system.center/wiki/#ORMWith
+ * @link            http://o2system.in/features/o2orm/with
  */
-class Has extends Relation
+class Has extends Relations
 {
+    protected $_relationships = array();
+
     /**
      * Set Relations
      *
@@ -65,147 +63,78 @@ class Has extends Relation
      *
      * @param   array $references list of references
      */
-    public function set_references( array $references )
+    public function set_relationships( array $relationsips )
     {
-        foreach( $references as $reference )
+        foreach ( $relationsips as $relationship )
         {
-            if( $reference_model = $this->_load_reference_model( $reference ) )
-            {
-                $this->_set_reference_model( $reference_model );
-            }
-            elseif( strpos( $reference, '.' ) !== FALSE )
-            {
-                $x_reference = explode( '.', $reference );
-                list( $reference, $reference_key ) = $x_reference;
-
-                $this->_set_reference_table( $reference, $reference_key );
-            }
-            else
-            {
-                $this->_set_reference_table( $reference );
-            }
+            $this->_set_relationship( $relationship );
         }
     }
 
     // ------------------------------------------------------------------------
 
-    /**
-     * Set Related Table
-     *
-     * Set object relation mapper from table name
-     *
-     * @access  protected
-     *
-     * @param string $reference     reference table name
-     * @param string $reference_key reference table index field
-     */
-    protected function _set_reference_table( $reference, $reference_key = 'id' )
+    protected function _set_relationship( $relation )
     {
-        $x_reference = explode( '_', $reference );
-        $x_reference = array_map( 'singular', $x_reference );
-        $reference_alias = implode( '_', $x_reference );
+        // Try to load reference model
+        $relation_model = $this->_load_relation_model( $relation );
 
-        $foreign_keys = array(
-            $reference_key . '_' . $reference_alias,
-            $reference_alias . '_' . $reference_key
-        );
+        $relationship = new \stdClass();
 
-        foreach( $foreign_keys as $field )
+        if ( $relation_model instanceof Model )
         {
-            if( in_array( $field, $this->_model->fields ) )
-            {
-                $foreign_key = $field;
-                break;
-            }
-        }
-
-        foreach( $this->_model->table_prefix as $prefix )
-        {
-            if( in_array( $reference_table = $prefix . $reference, $this->_model->tables ) )
-            {
-                $query = $this->_db->limit( 1 )->get( $reference_table );
-                $reference_fields = $query->list_fields();
-
-                $this->_model->map->add( $foreign_key, $reference_alias, $reference_table, $reference_key, $reference_fields )->relation('right');
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Load Related Model
-     *
-     * Overriding method of Relation::_load_reference_model()
-     *
-     * @access  protected
-     *
-     * @param   string|object $reference model name or instance of ORM model
-     *
-     * @return bool|object
-     */
-    protected function _load_reference_model( $reference )
-    {
-        if( $reference instanceof ORM )
-        {
-            return $reference;
+            $relationship->model = $relation_model;
+            $relationship->table = $relation_model->table;
         }
         else
         {
-            $reference =& Loader::model( $reference );
-
-            if( $reference instanceof ORM )
+            if ( strpos( $relation, '.' ) !== FALSE )
             {
-                return $reference;
-            }
+                $x_reference = explode( '.', $relation );
 
-            return FALSE;
+                $relationship->table = $x_reference[ 0 ];
+                $relationship->field = $x_reference[ 1 ];
+            }
+            else
+            {
+                $relationship->table = $relation;
+            }
         }
+
+        if(!  isset($relationship->field))
+        {
+            $reference_table = str_replace( Table::$prefixes, '', $this->_reference_table );
+            $reference_field = Inflector::singularize( $reference_table );
+
+            $relation_fields = array(
+                'id_' . $reference_field,
+                $reference_field . '_id',
+            );
+
+            foreach ( $relation_fields as $relation_field )
+            {
+                if( isset($this->_related_model) )
+                {
+                    $relationship->fields = $this->_related_model->fields;
+                }
+                else
+                {
+                    $relationship->fields = $this->_reference_model->db->list_fields( $relationship->table );
+                }
+
+                if ( in_array( $relation_field, $relationship->fields ) )
+                {
+                    $relationship->field = $relation_field;
+                }
+            }
+        }
+
+        $prefixes = Table::$prefixes;
+        array_unshift( $prefixes, $this->_reference_table );
+        $relationship->index = trim( str_replace($prefixes,'', $relationship->table), '_' );
+
+        $this->_relationships[ $relationship->index ] = $relationship;
     }
 
-    // ------------------------------------------------------------------------
-
-    /**
-     * Set Related Model
-     *
-     * Set object relation mapper from model
-     *
-     * @access  protected
-     *
-     * @param   object $reference instance of O2System\ORM model
-     */
-    protected function _set_reference_model( $reference )
-    {
-        $x_reference = explode( '_', $reference->table );
-
-        foreach( $x_reference as $key )
-        {
-            if( ! in_array( $key . '_', $this->_model->table_prefix ) )
-            {
-                $clean_x_table[ ] = singular( $key );
-            }
-        }
-
-        $reference_alias = implode( '_', $clean_x_table );
-
-        $foreign_keys = array(
-            $reference->primary_key . '_' . $reference_alias,
-            $reference_alias . '_' . $reference->primary_key
-        );
-
-        foreach( $foreign_keys as $field )
-        {
-            if( in_array( $field, $this->_model->fields ) )
-            {
-                $foreign_key = $field;
-                break;
-            }
-        }
-
-        $this->_model->map->add( $foreign_key, $reference_alias, $reference->table, $reference->primary_key, $reference->fields );
-    }
-
-    // ------------------------------------------------------------------------
 
     /**
      * Result
@@ -216,6 +145,25 @@ class Has extends Relation
      */
     public function result()
     {
-        return NULL;
+        if( ! empty( $this->_relationships ) )
+        {
+            $selects[] = $this->_reference_table . '.*';
+
+            foreach( $this->_relationships as $relationship )
+            {
+                $this->_reference_model->db->join( $relationship->table, $relationship->table . '.' . $relationship->field . ' = ' . $this->_reference_table . '.' . $this->_reference_field );
+
+                foreach( $relationship->fields as $field )
+                {
+                    $selects[] = $relationship->table . '.' . $field . ' AS ' . $relationship->index . '_' . $field;
+                }
+            }
+
+            $this->_reference_model->db->select( implode( ', ', $selects ) );
+
+            return $this->_relationships;
+        }
+
+        return array();
     }
 }
