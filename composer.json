@@ -35,8 +35,8 @@
 	},
 	"require": {
 		"php": ">=5.4.0",
-		"o2system/o2glob": "1.*",
-		"o2system/o2db": "1.*"
+		"o2system/o2glob": "*",
+		"o2system/o2db": "*"
 	},
 	"autoload": {
 		"psr-4": {
