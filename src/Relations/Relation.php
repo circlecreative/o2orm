@@ -6,7 +6,7 @@
  *
  * This content is released under the MIT License (MIT)
  *
- * Copyright (c) 2014, PT. Lingkar Kreasi (Circle Creative).
+ * Copyright (c) 2014, .
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,7 +28,7 @@
  *
  * @package        O2System
  * @author         Steeven Andrian Salim
- * @copyright      Copyright (c) 2005 - 2014, PT. Lingkar Kreasi (Circle Creative).
+ * @copyright      Copyright (c) 2005 - 2014, .
  * @license        http://circle-creative.com/products/o2system/license.html
  * @license        http://opensource.org/licenses/MIT	MIT License
  * @link           http://circle-creative.com
@@ -60,7 +60,7 @@ class Relation
     public $foreign_key = NULL;
 	public $object_key = NULL;
 	public $fields = array();
-	
+
 	/**
      * List of Possibles Table Prefixes
      *
@@ -190,7 +190,7 @@ class Relation
     }
 
     // ------------------------------------------------------------------------
-	
+
 	/**
      * Set Reference Table
      *

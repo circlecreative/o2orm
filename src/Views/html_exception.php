@@ -88,7 +88,7 @@
 
             <small>
                 Copyright &copy; 2010 - <?php echo date('Y'); ?><br>
-                PT. Lingkar Kreasi (Circle Creative)<br>
+                <br>
                 All Rights Reserved
             </small>
         </div>
